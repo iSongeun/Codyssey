@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영화 2D 티어리스트 (취향 x 재미)</title>
+    <style>
+        :root {
+            --bg-color: #0f0f12;
+            --card-bg: #1a1a24;
+            --accent-pink: #ff2a75;
+            --accent-dark-pink: #990033;
+            --accent-black: #050508;
+            --border-color: #2e2e3e;
+            --text-color: #f0f0f5;
+            --text-sub: #a0a0b0;
+            --axis-line: #ff2a7588;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header Navigation */
+        header {
+            height: 60px;
+            background-color: #14141c;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-pink);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #252535;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #323246;
+            border-color: var(--accent-pink);
+        }
+
+        .btn-primary {
+            background: var(--accent-pink);
+            color: #fff;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #e01f65;
+        }
+
+        /* App Container */
+        .app-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* View Sections */
+        .view-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        .view-section.active {
+            display: flex;
+        }
+
+        /* Main Tier Board Layout */
+        .board-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: radial-gradient(circle at center, #181824 0%, #0c0c10 100%);
+        }
+
+        /* 4-Quadrant Graph */
+        .graph-quadrant {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            height: 100%;
+            max-height: 100%;
+            background-color: rgba(20, 20, 30, 0.7);
+            border: 2px solid #333345;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Axes Lines */
+        .axis-x {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-pink), transparent);
+            z-index: 1;
+        }
+
+        .axis-y {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, var(--accent-pink), transparent);
+            z-index: 1;
+        }
+
+        /* Quadrant Labels */
+        .quadrant-label {
+            position: absolute;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.25);
+            pointer-events: none;
+            z-index: 1;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .ql-top-right { top: 15px; right: 20px; text-align: right; }
+        .ql-top-left { top: 15px; left: 20px; }
+        .ql-bottom-left { bottom: 15px; left: 20px; }
+        .ql-bottom-right { bottom: 15px; right: 20px; text-align: right; }
+
+        /* Axis Titles */
+        .axis-title {
+            position: absolute;
+            font-weight: 800;
+            color: var(--accent-pink);
+            font-size: 0.95rem;
+            z-index: 2;
+            background: rgba(15, 15, 18, 0.8);
+            padding: 4px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--accent-pink);
+        }
+
+        .axis-title-y-top { top: 10px; left: 50%; transform: translateX(-50%); }
+        .axis-title-y-bottom { bottom: 10px; left: 50%; transform: translateX(-50%); }
+        .axis-title-x-right { right: 10px; top: 50%; transform: translateY(-50%); }
+        .axis-title-x-left { left: 10px; top: 50%; transform: translateY(-50%); }
+
+        /* Drop Zone Graph Canvas */
+        .graph-drop-zone {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        /* Movie Tray Bottom */
+        .tray-container {
+            height: 160px;
+            background-color: #14141d;
+            border-top: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .tray-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tray-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tray-list {
+            flex: 1;
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            overflow-x: auto;
+            padding: 4px 6px;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .tray-list::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .tray-list::-webkit-scrollbar-thumb {
+            background: #333348;
+            border-radius: 3px;
+        }
+
+        /* Movie Card Component */
+        .movie-card {
+            width: 80px;
+            height: 115px;
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            border: 2px solid #333348;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+
+        .movie-card:hover {
+            border-color: var(--accent-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(255, 42, 117, 0.3);
+        }
+
+        .movie-card.dragging {
+            opacity: 0.4;
+            cursor: grabbing;
+        }
+
+        .movie-card.on-graph {
+            position: absolute;
+            margin-left: -40px; /* Center horizontally on drop point */
+            margin-top: -57px;  /* Center vertically on drop point */
+            z-index: 5;
+        }
+
+        .movie-poster {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .movie-info-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.95), rgba(0,0,0,0));
+            padding: 16px 4px 4px 4px;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+
+        .movie-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #fff;
+        }
+
+        .movie-year {
+            font-size: 0.65rem;
+            color: var(--accent-pink);
+        }
+
+        /* Sparkle FX Particles */
+        .sparkle-particle {
+            position: absolute;
+            pointer-events: none;
+            z-index: 999;
+            font-size: 1.2rem;
+            animation: sparkle-fade 0.7s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes sparkle-fade {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(0.5) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), var(--dy)) scale(1.4) rotate(180deg);
+            }
+        }
+
+        /* Modal Popup */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: #1a1a26;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-sub);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: #101018;
+            border: 1px solid #333348;
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-pink);
+        }
+
+        .search-results {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .search-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+            background: #222230;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-item:hover {
+            background: #2d2d40;
+        }
+
+        .search-item img {
+            width: 40px;
+            height: 55px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .search-item-info {
+            flex: 1;
+        }
+
+        .search-item-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .search-item-year {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        .custom-form {
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .custom-form-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-sub);
+        }
+
+        /* Community Explore Layout */
+        .explore-container {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .explore-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        .user-card {
+            background: #161622;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--accent-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+
+        .user-name {
+            font-weight: 700;
+        }
+
+        .user-handle {
+            font-size: 0.8rem;
+            color: var(--text-sub);
+        }
+
+        .mini-preview-graph {
+            height: 140px;
+            background: #0d0d14;
+            border-radius: 8px;
+            position: relative;
+            border: 1px dashed #333348;
+            overflow: hidden;
+        }
+
+        .mini-preview-graph .mini-dot {
+            position: absolute;
+            width: 24px;
+            height: 34px;
+            border-radius: 3px;
+            border: 1px solid var(--accent-pink);
+            background-size: cover;
+            transform: translate(-50%, -50%);
+        }
+
+        .badge-guest {
+            font-size: 0.75rem;
+            background: #333348;
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo">
+            <span>🎬 CineTier 2D</span>
+        </div>
+        <div class="nav-buttons">
+            <button class="btn" id="nav-my-tier" onclick="switchTab('my-tier')">내 티어리스트</button>
+            <button class="btn" id="nav-explore" onclick="switchTab('explore')">둘러보기</button>
+            <span id="user-status-badge" class="badge-guest">비회원</span>
+            <button class="btn btn-primary" id="auth-btn" onclick="openAuthModal()">계정 연결</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- 1. My Tier Board View -->
+        <div id="view-my-tier" class="view-section active">
+            <div class="board-container">
+                <div class="graph-quadrant" id="tier-graph">
+                    <!-- Axis Visuals -->
+                    <div class="axis-x"></div>
+                    <div class="axis-y"></div>
+
+                    <!-- Quadrant Description Labels -->
+                    <div class="quadrant-label ql-top-right">취향 저격 🔥<br>극상의 재미 🍿</div>
+                    <div class="quadrant-label ql-top-left">내 스타일 ❤️<br>잔잔한 재미 ☕</div>
+                    <div class="quadrant-label ql-bottom-left">비선호 💔<br>아쉬운 재미 🌧️</div>
+                    <div class="quadrant-label ql-bottom-right">대중적 🎬<br>도파민 폭발 ⚡</div>
+
+                    <!-- Axis Titles -->
+                    <div class="axis-title axis-title-y-top">+ 취향 높음</div>
+                    <div class="axis-title axis-title-y-bottom">- 취향 낮음</div>
+                    <div class="axis-title axis-title-x-right">+ 재미 높음</div>
+                    <div class="axis-title axis-title-x-left">- 재미 낮음</div>
+
+                    <!-- Dynamic Drop Zone Area -->
+                    <div class="graph-drop-zone" id="graph-drop-zone" 
+                         ondragover="handleDragOver(event)" 
+                         ondrop="handleDropOnGraph(event)"></div>
+                </div>
+            </div>
+
+            <!-- Bottom Movie Tray -->
+            <div class="tray-container" ondragover="handleDragOver(event)" ondrop="handleDropOnTray(event)">
+                <div class="tray-header">
+                    <span class="tray-title">📦 보관된 영화 목록 (드래그해서 그래프로 올리세요)</span>
+                    <button class="btn btn-primary" onclick="openSearchModal()">+ 영화 검색 / 등록</button>
+                </div>
+                <div class="tray-list" id="tray-list">
+                    <!-- Cards render dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Community Explore View -->
+        <div id="view-explore" class="view-section">
+            <div class="explore-container">
+                <h2>🌐 다른 사용자 티어리스트 탐색</h2>
+                <p style="color: var(--text-sub); margin-top: 4px;">다른 사용자의 영화 취향과 평가를 구경하고 팔로우해보세요.</p>
+
+                <div class="explore-grid" id="explore-grid">
+                    <!-- Dynamic user lists -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Register Modal -->
+    <div class="modal-overlay" id="search-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">영화 검색 및 등록</span>
+                <button class="close-btn" onclick="closeSearchModal()">&times;</button>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="search-input" class="input-field" placeholder="영화 제목 입력 (예: 기생충, 인셉션...)" onkeypress="if(event.key==='Enter') searchMovie()">
+                <button class="btn btn-primary" onclick="searchMovie()">검색</button>
+            </div>
+
+            <div class="search-results" id="search-results">
+                <div style="font-size: 0.85rem; color: var(--text-sub); text-align: center; padding: 20px;">
+                    영화 제목을 입력 후 검색을 누르세요.
+                </div>
+            </div>
+
+            <div class="custom-form">
+                <span class="custom-form-title">🔍 찾는 영화가 없나요? 직접 등록하기</span>
+                <input type="text" id="custom-title" class="input-field" placeholder="영화 제목">
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="custom-year" class="input-field" placeholder="개봉 연도 (예: 2024)">
+                    <input type="text" id="custom-poster" class="input-field" placeholder="포스터 이미지 URL (선택)">
+                </div>
+                <button class="btn" style="width: 100%; margin-top: 6px;" onclick="registerCustomMovie()">직접 등록 완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth / Account Modal -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">계정 연동하기</span>
+                <button class="close-btn" onclick="closeAuthModal()">&times;</button>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-sub); margin-bottom: 16px;">
+                현재 비회원으로 배치한 티어리스트 데이터를 내 계정에 저장하고 연동합니다.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="auth-username" class="input-field" placeholder="아이디 / 사용자 이름">
+                <button class="btn btn-primary" onclick="linkAccount()">비회원 데이터 계정 연동하기</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initial Pre-loaded Movies Data
+        const initialMovies = [
+            { id: 'm1', title: '기생충', year: '2019', poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm2', title: '인터스텔라', year: '2014', poster: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm3', title: '라라랜드', year: '2016', poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm4', title: '센과 치히로', year: '2001', poster: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm5', title: '어벤져스: 엔드게임', year: '2019', poster: 'https://images.unsplash.com/photo-1568832359672-e36cf5d74f54?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm6', title: '범죄도시', year: '2017', poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm7', title: '타이타닉', year: '1997', poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm8', title: '토이 스토리', year: '1995', poster: 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=200&auto=format&fit=crop&q=60' }
+        ];
+
+        // API Mock Search Database
+        const mockDatabase = [
+            { title: '인셉션', year: '2010', poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=200&auto=format&fit=crop&q=60' },
+            { title: '다크 나이트', year: '2008', poster: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cd8?w=200&auto=format&fit=crop&q=60' },
+            { title: '아바타', year: '2009', poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=200&auto=format&fit=crop&q=60' },
+            { title: '헤어질 결심', year: '2022', poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&auto=format&fit=crop&q=60' },
+            { title: '매트릭스', year: '1999', poster: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=200&auto=format&fit=crop&q=60' }
+        ];
+
+        // Community Mock Users Data
+        let exploreUsers = [
+            {
+                id: 'u1',
+                name: '영화덕후_김철수',
+                isFollowing: false,
+                movies: [
+                    { title: '기생충', year: '2019', x: 80, y: 85, poster: initialMovies[0].poster },
+                    { title: '인터스텔라', year: '2014', x: 90, y: 70, poster: initialMovies[1].poster },
+                    { title: '범죄도시', year: '2017', x: 75, y: 25, poster: initialMovies[5].poster }
+                ]
+            },
+            {
+                id: 'u2',
+                name: '시네필_이영희',
+                isFollowing: true,
+                movies: [
+                    { title: '라라랜드', year: '2016', x: 85, y: 90, poster: initialMovies[2].poster },
+                    { title: '센과 치히로', year: '2001', x: 60, y: 95, poster: initialMovies[3].poster },
+                    { title: '타이타닉', year: '1997', x: 70, y: 60, poster: initialMovies[6].poster }
+                ]
+            },
+            {
+                id: 'u3',
+                name: '무비마스터',
+                isFollowing: false,
+                movies: [
+                    { title: '어벤져스: 엔드게임', year: '2019', x: 95, y: 40, poster: initialMovies[4].poster },
+                    { title: '토이 스토리', year: '1995', x: 65, y: 80, poster: initialMovies[7].poster }
+                ]
+            }
+        ];
+
+        // Application State
+        let userState = {
+            isLoggedIn: false,
+            username: '비회원 (게스트)',
+            movies: {} // id -> { id, title, year, poster, status: 'tray' | 'graph', xPercent: 0, yPercent: 0 }
+        };
+
+        let draggedMovieId = null;
+        let dragSource = null; // 'tray' | 'graph'
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            // Load initial movies into state
+            initialMovies.forEach(m => {
+                userState.movies[m.id] = {
+                    ...m,
+                    status: 'tray',
+                    xPercent: 0,
+                    yPercent: 0
+                };
+            });
+
+            renderTray();
+            renderGraph();
+            renderExploreGrid();
+        });
+
+        // Tab Switching
+        function switchTab(tab) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            if (tab === 'my-tier') {
+                document.getElementById('view-my-tier').classList.add('active');
+            } else if (tab === 'explore') {
+                document.getElementById('view-explore').classList.add('active');
+            }
+        }
+
+        // Render Functions
+        function renderTray() {
+            const trayList = document.getElementById('tray-list');
+            trayList.innerHTML = '';
+
+            Object.values(userState.movies)
+                .filter(m => m.status === 'tray')
+                .forEach(movie => {
+                    const card = createMovieCardElement(movie);
+                    trayList.appendChild(card);
+                });
+        }
+
+        function renderGraph() {
+            const dropZone = document.getElementById('graph-drop-zone');
+            dropZone.innerHTML = '';
+
+            Object.values(userState.movies)
+                .filter(m => m.status === 'graph')
+                .forEach(movie => {
+                    const card = createMovieCardElement(movie);
+                    card.classList.add('on-graph');
+                    card.style.left = movie.xPercent + '%';
+                    card.style.top = movie.yPercent + '%';
+                    dropZone.appendChild(card);
+                });
+        }
+
+        function createMovieCardElement(movie) {
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            card.draggable = true;
+            card.dataset.id = movie.id;
+
+            card.innerHTML = `
+                <img src="${movie.poster}" class="movie-poster" alt="${movie.title}" onerror="this.src='https://via.placeholder.com/80x115?text=No+Image'">
+                <div class="movie-info-overlay">
+                    <span class="movie-title">${movie.title}</span>
+                    <span class="movie-year">${movie.year}</span>
+                </div>
+            `;
+
+            // Drag Events
+            card.addEventListener('dragstart', (e) => {
+                draggedMovieId = movie.id;
+                dragSource = movie.status;
+                card.classList.add('dragging');
+                e.dataTransfer.setData('text/plain', movie.id);
+            });
+
+            card.addEventListener('dragend', (e) => {
+                card.classList.remove('dragging');
+                // If drop failed or cancelled, draggedMovieId reset happens, state retains previous position!
+                draggedMovieId = null;
+                dragSource = null;
+            });
+
+            return card;
+        }
+
+        // Drag and Drop Handlers
+        function handleDragOver(e) {
+            e.preventDefault(); // Enable dropping
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDropOnGraph(e) {
+            e.preventDefault();
+            if (!draggedMovieId) return;
+
+            const graphRect = document.getElementById('tier-graph').getBoundingClientRect();
+            
+            // Calculate relative drop coordinates in percentage
+            let xPixel = e.clientX - graphRect.left;
+            let yPixel = e.clientY - graphRect.top;
+
+            // Clamp inside boundary
+            xPixel = Math.max(20, Math.min(graphRect.width - 20, xPixel));
+            yPixel = Math.max(20, Math.min(graphRect.height - 20, yPixel));
+
+            const xPercent = (xPixel / graphRect.width) * 100;
+            const yPercent = (yPixel / graphRect.height) * 100;
+
+            // Update Movie State
+            userState.movies[draggedMovieId].status = 'graph';
+            userState.movies[draggedMovieId].xPercent = xPercent;
+            userState.movies[draggedMovieId].yPercent = yPercent;
+
+            // Trigger Pink/Black Star Sparkle Animation at dropped coordinates
+            createSparkleEffect(e.clientX, e.clientY);
+
+            // Re-render
+            renderTray();
+            renderGraph();
+        }
+
+        function handleDropOnTray(e) {
+            e.preventDefault();
+            if (!draggedMovieId) return;
+
+            // Move back to tray (NO Sparkle animation triggered on cancel/tray drop)
+            userState.movies[draggedMovieId].status = 'tray';
+
+            renderTray();
+            renderGraph();
+        }
+
+        // Sparkle FX (Pink & Black Star Emojis Explosion)
+        function createSparkleEffect(x, y) {
+            const sparkles = ['✨', '⭐', '🌟', '💥', '🖤', '🩷'];
+            const particleCount = 12;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'sparkle-particle';
+                
+                // Pick random emoji
+                particle.innerText = sparkles[Math.floor(Math.random() * sparkles.length)];
+
+                // Calculate random trajectory vector
+                const angle = Math.random() * Math.PI * 2;
+                const distance = 40 + Math.random() * 60;
+                const dx = Math.cos(angle) * distance + 'px';
+                const dy = Math.sin(angle) * distance + 'px';
+
+                particle.style.setProperty('--dx', dx);
+                particle.style.setProperty('--dy', dy);
+                particle.style.left = x + 'px';
+                particle.style.top = y + 'px';
+
+                document.body.appendChild(particle);
+
+                // Clean up DOM after animation completes
+                setTimeout(() => {
+                    particle.remove();
+                }, 700);
+            }
+        }
+
+        // Search & Custom Movie Modal Logic
+        function openSearchModal() {
+            document.getElementById('search-modal').classList.add('active');
+        }
+
+        function closeSearchModal() {
+            document.getElementById('search-modal').classList.remove('active');
+        }
+
+        function searchMovie() {
+            const query = document.getElementById('search-input').value.trim().toLowerCase();
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.innerHTML = '';
+
+            if (!query) {
+                resultsContainer.innerHTML = '<div style="font-size:0.85rem; color:var(--text-sub); text-align:center; padding:20px;">검색어를 입력해주세요.</div>';
+                return;
+            }
+
+            const matched = mockDatabase.filter(m => m.title.toLowerCase().includes(query));
+
+            if (matched.length === 0) {
+                resultsContainer.innerHTML = '<div style="font-size:0.85rem; color:var(--text-sub); text-align:center; padding:20px;">검색 결과가 없습니다. 아래 직접 등록을 이용해보세요!</div>';
+                return;
+            }
+
+            matched.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'search-item';
+                div.innerHTML = `
+                    <img src="${item.poster}" alt="${item.title}">
+                    <div class="search-item-info">
+                        <div class="search-item-title">${item.title}</div>
+                        <div class="search-item-year">${item.year}년</div>
+                    </div>
+                    <button class="btn btn-primary" style="font-size:0.8rem; padding:4px 10px;">+ 추가</button>
+                `;
+                div.querySelector('button').onclick = () => addMovieToTray(item.title, item.year, item.poster);
+                resultsContainer.appendChild(div);
+            });
+        }
+
+        function registerCustomMovie() {
+            const title = document.getElementById('custom-title').value.trim();
+            const year = document.getElementById('custom-year').value.trim() || '2024';
+            let poster = document.getElementById('custom-poster').value.trim();
+
+            if (!title) {
+                alert('영화 제목을 입력해 주세요.');
+                return;
+            }
+
+            if (!poster) {
+                poster = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=200&auto=format&fit=crop&q=60';
+            }
+
+            addMovieToTray(title, year, poster);
+
+            // Clear Inputs
+            document.getElementById('custom-title').value = '';
+            document.getElementById('custom-year').value = '';
+            document.getElementById('custom-poster').value = '';
+        }
+
+        function addMovieToTray(title, year, poster) {
+            const newId = 'm_' + Date.now();
+            userState.movies[newId] = {
+                id: newId,
+                title: title,
+                year: year,
+                poster: poster,
+                status: 'tray',
+                xPercent: 0,
+                yPercent: 0
+            };
+
+            renderTray();
+            closeSearchModal();
+        }
+
+        // Account & Guest Logic
+        function openAuthModal() {
+            document.getElementById('auth-modal').classList.add('active');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.remove('active');
+        }
+
+        function linkAccount() {
+            const usernameInput = document.getElementById('auth-username').value.trim();
+            if (!usernameInput) {
+                alert('아이디를 입력해주세요.');
+                return;
+            }
+
+            userState.isLoggedIn = true;
+            userState.username = usernameInput;
+
+            document.getElementById('user-status-badge').className = 'badge-guest';
+            document.getElementById('user-status-badge').style.background = 'var(--accent-pink)';
+            document.getElementById('user-status-badge').style.color = '#fff';
+            document.getElementById('user-status-badge').innerText = usernameInput + ' 님';
+
+            document.getElementById('auth-btn').innerText = '연동 완료됨';
+            document.getElementById('auth-btn').disabled = true;
+
+            closeAuthModal();
+            alert(`[${usernameInput}] 계정으로 비회원 티어리스트 연동이 성공적으로 completed 되었습니다.`);
+        }
+
+        // Community Explore & Follow Logic
+        function renderExploreGrid() {
+            const container = document.getElementById('explore-grid');
+            container.innerHTML = '';
+
+            exploreUsers.forEach(user => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+
+                let dotsHtml = '';
+                user.movies.forEach(m => {
+                    dotsHtml += `<div class="mini-dot" style="left:${m.x}%; top:${m.y}%; background-image:url('${m.poster}')" title="${m.title}"></div>`;
+                });
+
+                card.innerHTML = `
+                    <div class="user-header">
+                        <div class="user-info">
+                            <div class="user-avatar">${user.name[0]}</div>
+                            <div>
+                                <div class="user-name">${user.name}</div>
+                                <div class="user-handle">등록 영화 ${user.movies.length}개</div>
+                            </div>
+                        </div>
+                        <button class="btn ${user.isFollowing ? '' : 'btn-primary'}" onclick="toggleFollow('${user.id}')">
+                            ${user.isFollowing ? '팔로잉 ✓' : '팔로우 +'}
+                        </button>
+                    </div>
+                    <div class="mini-preview-graph">
+                        <div style="position:absolute; top:50%; width:100%; height:1px; background:#222233;"></div>
+                        <div style="position:absolute; left:50%; height:100%; width:1px; background:#222233;"></div>
+                        ${dotsHtml}
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        function toggleFollow(userId) {
+            const user = exploreUsers.find(u => u.id === userId);
+            if (user) {
+                user.isFollowing = !user.isFollowing;
+                renderExploreGrid();
+            }
+        }
+    </script>
+</body>
+</html>
