@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>무비 티어</title>
+<style>
+:root{
+  --bg:#fff7fb;
+  --surface:#ffffff;
+  --ink:#141014;
+  --ink-2:#3b2c35;
+  --muted:#85707b;
+  --pink:#ff3d9a;
+  --pink-2:#ff8cc4;
+  --pink-soft:#ffe6f2;
+  --pink-faint:#fff0f7;
+  --line:#f3cfe0;
+  --shadow:0 10px 30px rgba(60,10,40,.12);
+  --radius:16px;
+  --font:"Pretendard","Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic","맑은 고딕",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;cursor:pointer}
+input{font:inherit}
+img{-webkit-user-drag:none;user-select:none}
+
+/* ---------- 상단 바 ---------- */
+.topbar{
+  display:flex;align-items:center;gap:16px;padding:12px 20px;
+  background:var(--ink);color:#fff;flex-shrink:0;
+}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:18px;letter-spacing:-.02em;white-space:nowrap}
+.brand .logo{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:var(--pink);font-size:17px}
+.tabs{display:flex;gap:4px;background:rgba(255,255,255,.08);padding:4px;border-radius:12px}
+.tab{border:0;background:transparent;color:#d9c7d1;padding:8px 14px;border-radius:9px;font-weight:600;font-size:14px;white-space:nowrap}
+.tab.is-active{background:#fff;color:var(--ink)}
+.account{
+  margin-left:auto;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;
+  padding:8px 12px;border-radius:999px;font-size:13px;display:flex;align-items:center;gap:8px;white-space:nowrap
+}
+.account .badge{background:var(--pink);color:#fff;border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700}
+.account .badge.member{background:#fff;color:var(--ink)}
+
+main{flex:1;min-height:0;position:relative}
+.view{display:none;height:100%}
+.view.is-active{display:flex;flex-direction:column}
+
+/* ---------- 내 티어리스트 ---------- */
+.board-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:16px 20px 10px}
+.board-head h1{margin:0;font-size:20px;letter-spacing:-.02em}
+.sub{margin:4px 0 0;color:var(--muted);font-size:13px}
+kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:#fff;color:var(--ink-2)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--pink-soft);color:#b0186a;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--pink)}
+.chip.dark{background:var(--ink);color:#fff}
+.chip.dark::before{background:var(--pink-2)}
+
+.graph-wrap{flex:1;min-height:0;padding:0 20px 12px;display:flex}
+.graph{
+  position:relative;flex:1;min-height:260px;border-radius:var(--radius);
+  background:var(--surface);border:1.5px solid var(--line);overflow:hidden;
+  transition:box-shadow .2s,border-color .2s;
+}
+.graph.is-over{border-color:var(--pink);box-shadow:0 0 0 4px rgba(255,61,154,.18)}
+.q{position:absolute;width:50%;height:50%;display:flex;padding:12px;font-size:12px;font-weight:700;color:#c58aa8;pointer-events:none}
+.q1{right:0;top:0;justify-content:flex-end;background:linear-gradient(225deg,#ffe0ef 0%,rgba(255,224,239,0) 70%)}
+.q2{left:0;top:0;background:linear-gradient(135deg,#fff3f9 0%,rgba(255,243,249,0) 70%)}
+.q3{left:0;bottom:0;align-items:flex-end;background:linear-gradient(45deg,#f6f1f4 0%,rgba(246,241,244,0) 70%);color:#a8999f}
+.q4{right:0;bottom:0;justify-content:flex-end;align-items:flex-end;background:linear-gradient(315deg,#fff3f9 0%,rgba(255,243,249,0) 70%)}
+.axis-x,.axis-y{position:absolute;background:var(--ink);pointer-events:none}
+.axis-x{left:0;right:0;top:50%;height:2px;transform:translateY(-1px)}
+.axis-y{top:0;bottom:0;left:50%;width:2px;transform:translateX(-1px)}
+.axis-x::after{content:"";position:absolute;right:0;top:-5px;border:6px solid transparent;border-left:9px solid var(--ink);border-right:0}
+.axis-y::after{content:"";position:absolute;top:0;left:-5px;border:6px solid transparent;border-bottom:9px solid var(--ink);border-top:0}
+.ax{position:absolute;font-size:11px;font-weight:800;background:var(--ink);color:#fff;padding:3px 8px;border-radius:999px;pointer-events:none;white-space:nowrap}
+.ax-top{top:10px;left:50%;transform:translateX(10px)}
+.ax-bottom{bottom:10px;left:50%;transform:translateX(10px);background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.ax-right{right:10px;top:50%;transform:translateY(8px)}
+.ax-left{left:10px;top:50%;transform:translateY(8px);background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.graph-empty[hidden]{display:none}
+.graph-empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.graph-empty span{background:rgba(255,255,255,.9);border:1.5px dashed var(--pink-2);color:#b0186a;font-size:14px;font-weight:600;padding:12px 18px;border-radius:12px}
+.cards{position:absolute;inset:0}
+
+/* ---------- 영화 카드 ---------- */
+.mcard{
+  position:relative;background:#fff;color:var(--ink);border-radius:12px;padding:5px;
+  box-shadow:0 2px 8px rgba(60,10,40,.12);user-select:none;-webkit-user-select:none;
+  cursor:grab;
+}
+.mcard .poster{display:block;width:100%;aspect-ratio:200/290;object-fit:cover;border-radius:8px;background:var(--pink-soft)}
+.mcard .meta{padding:5px 2px 1px;min-width:0}
+.mcard .meta b{display:block;font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcard .meta span{display:block;font-size:11px;color:var(--muted)}
+.mcard .x{
+  position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;
+  border:2px solid #fff;background:var(--ink);color:#fff;font-size:12px;line-height:1;
+  display:grid;place-items:center;opacity:0;transform:scale(.8);transition:.15s;
+}
+.mcard:hover .x,.mcard:focus-within .x{opacity:1;transform:scale(1)}
+@media (hover:none){.mcard .x{opacity:1;transform:scale(1)}}
+.mcard.is-source{visibility:hidden}
+.mcard.g{position:absolute;left:0;top:0;width:var(--gcw,74px);transform:translate(-50%,-50%);touch-action:none}
+.graph:not(.laid) .mcard.g{visibility:hidden}
+.graph.compact .mcard.g .meta span{display:none}
+.graph.compact .mcard.g .meta b{font-size:10px}
+.graph.compact .mcard.g{padding:4px;border-radius:9px}
+.mcard.g .meta b{font-size:11px}
+.mcard.g .meta span{font-size:10px}
+.mcard.g:hover{z-index:5}
+.mcard.ro{cursor:default}
+.mcard.pop{animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:translate(-50%,-50%) scale(.6)}100%{transform:translate(-50%,-50%) scale(1)}}
+
+/* ---------- 하단 목록 ---------- */
+.tray{flex-shrink:0;background:var(--ink);color:#fff;padding:12px 0 14px;border-radius:20px 20px 0 0}
+.tray-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px 10px}
+.tray-head h2{margin:0;font-size:15px;font-weight:700}
+.tray-head h2 span{color:var(--pink-2);margin-left:4px}
+.tray-list{display:flex;gap:12px;overflow-x:auto;padding:8px 20px 6px;min-height:186px;align-items:flex-start;scrollbar-width:thin;scrollbar-color:#5a4552 transparent}
+.tray-list .mcard{flex:0 0 96px;width:96px;min-width:0;touch-action:pan-x}
+.tray-empty{color:#b9a3af;font-size:14px;align-self:center;margin:auto;text-align:center;line-height:1.6}
+
+.btn{border:0;border-radius:10px;padding:9px 14px;font-weight:700;font-size:14px;background:var(--pink-soft);color:var(--ink)}
+.btn.primary{background:var(--pink);color:#fff}
+.btn.dark{background:var(--ink);color:#fff}
+.btn.ghost{background:transparent;border:1.5px solid var(--line)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.following{background:var(--ink);color:#fff}
+
+/* ---------- 드래그 고스트 ---------- */
+.drag-ghost{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;will-change:transform}
+.drag-ghost .mcard{transform:rotate(-4deg) scale(1.06);box-shadow:0 18px 40px rgba(20,5,15,.35);transition:transform .15s;cursor:grabbing}
+.drag-ghost.returning .mcard{transform:none;box-shadow:0 2px 8px rgba(60,10,40,.12)}
+.drag-ghost .x{display:none}
+body.is-dragging,body.is-dragging *{cursor:grabbing !important}
+
+/* ---------- 스파크 ---------- */
+.spark{position:fixed;left:0;top:0;width:0;height:0;z-index:1100;pointer-events:none}
+.spark i{position:absolute;left:0;top:0;font-style:normal;line-height:1;will-change:transform,opacity}
+.spark .ring{position:absolute;left:0;top:0;border-radius:50%;border:3px solid var(--pink);width:20px;height:20px}
+
+/* ---------- 둘러보기 ---------- */
+.scroll{overflow-y:auto;height:100%}
+.explore-inner{max-width:1100px;margin:0 auto;padding:22px 20px 40px}
+.explore-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.explore-head h1{margin:0;font-size:22px;letter-spacing:-.02em}
+.seg{display:flex;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:3px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:9px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg button.is-active{background:var(--ink);color:#fff}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.ucard{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:12px}
+.ucard.me{border-color:var(--pink)}
+.urow{display:flex;align-items:center;gap:10px}
+.avatar{flex-shrink:0;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--ink)}
+.uname{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px}
+.uname em{font-style:normal;font-size:10px;background:var(--pink);color:#fff;border-radius:999px;padding:2px 7px}
+.ustat{font-size:12px;color:var(--muted);margin-top:2px}
+.ubio{font-size:13px;color:var(--ink-2);margin:0}
+.uactions{display:flex;gap:8px}
+.uactions .btn{flex:1}
+.empty-state{grid-column:1/-1;text-align:center;color:var(--muted);padding:50px 10px;background:#fff;border:1.5px dashed var(--line);border-radius:var(--radius)}
+
+.mini{position:relative;aspect-ratio:16/10;border-radius:10px;background:var(--pink-faint);overflow:hidden;cursor:pointer}
+.mini::before,.mini::after{content:"";position:absolute;background:var(--ink);opacity:.8}
+.mini::before{left:0;right:0;top:50%;height:1.5px}
+.mini::after{top:0;bottom:0;left:50%;width:1.5px}
+.mini img{position:absolute;width:26px;object-fit:cover;background:var(--pink-soft);aspect-ratio:200/290;border-radius:3px;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.25);z-index:1}
+
+/* ---------- 사용자 상세 ---------- */
+.user-head{display:flex;align-items:center;gap:12px;padding:14px 20px 10px;flex-wrap:wrap}
+.user-head .back{border:0;background:#fff;border:1.5px solid var(--line);width:38px;height:38px;border-radius:10px;font-size:18px}
+.user-head h1{margin:0;font-size:20px;letter-spacing:-.02em}
+.user-head .grow{flex:1;min-width:160px}
+.user-head .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+
+/* ---------- 모달 ---------- */
+dialog{
+  border:0;padding:0;border-radius:20px;width:min(560px,calc(100vw - 24px));max-height:min(720px,calc(100dvh - 24px));
+  box-shadow:0 30px 80px rgba(20,5,15,.35);color:var(--ink);background:#fff;
+}
+dialog::backdrop{background:rgba(20,10,16,.55)}
+.dlg{display:flex;flex-direction:column;max-height:min(720px,calc(100dvh - 24px))}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 10px}
+.dlg-head h2{margin:0;font-size:18px}
+.dlg-close{border:0;background:var(--pink-faint);width:34px;height:34px;border-radius:10px;font-size:16px}
+.dlg-body{padding:4px 20px 20px;overflow-y:auto}
+.search-box{position:relative}
+.search-box input{width:100%;padding:13px 14px 13px 40px;border-radius:12px;border:1.5px solid var(--line);font-size:15px;outline:none;background:var(--pink-faint)}
+.search-box input:focus{border-color:var(--pink);background:#fff}
+.search-box::before{content:"⌕";position:absolute;left:14px;top:50%;transform:translateY(-52%);font-size:20px;color:var(--muted)}
+.result-label{font-size:12px;font-weight:700;color:var(--muted);margin:14px 2px 6px}
+.results{display:flex;flex-direction:column}
+.result{display:flex;align-items:center;gap:12px;padding:8px 4px;border-bottom:1px solid #f6e3ec}
+.result img{width:42px;aspect-ratio:200/290;border-radius:6px;object-fit:cover;flex-shrink:0}
+.result .info{flex:1;min-width:0}
+.result .info b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result .info span{font-size:12px;color:var(--muted)}
+.no-result{text-align:center;padding:22px 10px;color:var(--muted);font-size:14px}
+.manual-cta{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 14px;font-size:13px}
+.manual-cta .btn{white-space:nowrap}
+
+.form{display:grid;gap:14px}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+.field input[type=text],.field input[type=number],.field input[type=email]{
+  width:100%;padding:11px 12px;border-radius:10px;border:1.5px solid var(--line);outline:none;font-size:15px
+}
+.field input:focus{border-color:var(--pink)}
+.field small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+.manual-grid{display:grid;grid-template-columns:1fr 120px;gap:16px;align-items:start}
+.preview .mcard{cursor:default}
+.file-btn{display:flex;align-items:center;gap:8px}
+.file-btn input{display:none}
+.err{color:#d0105e;font-size:12px;min-height:16px;margin:0}
+.notice{background:var(--pink-faint);border-radius:12px;padding:12px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.dlg-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+
+/* ---------- 토스트 ---------- */
+.credit{position:fixed;right:10px;bottom:6px;z-index:5;font-size:10px;color:#b9a3af;pointer-events:none}
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;z-index:1200;
+  background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-size:14px;font-weight:600;
+  box-shadow:var(--shadow);transition:.25s;pointer-events:none;max-width:calc(100vw - 32px);text-align:center
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast::before{content:"★ ";color:var(--pink-2)}
+
+@media (max-width:640px){
+  .topbar{padding:10px 12px;gap:8px;flex-wrap:wrap}
+  .brand{font-size:16px}
+  .tabs{order:3;width:100%}
+  .tab{flex:1}
+  .board-head{padding:12px 12px 8px}
+  .board-head h1{font-size:17px}
+  .graph-wrap{padding:0 12px 10px}
+  .tray-head{padding:0 12px 8px}
+  .tray-list{padding:8px 12px 6px;min-height:166px}
+  .tray-list .mcard{flex-basis:84px;width:84px}
+  .ax{font-size:10px;padding:2px 6px}
+  .q{font-size:10px;padding:8px}
+  .manual-grid{grid-template-columns:1fr}
+  .preview{max-width:120px}
+}
+@media (prefers-reduced-motion:reduce){
+  .mcard.pop{animation:none}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="logo">★</span>무비 티어</div>
+  <nav class="tabs" aria-label="메뉴">
+    <button class="tab is-active" data-view="my">내 티어리스트</button>
+    <button class="tab" data-view="explore">둘러보기</button>
+  </nav>
+  <button class="account" id="accountBtn"></button>
+</header>
+
+<main>
+  <!-- 내 티어리스트 -->
+  <section class="view is-active" id="view-my">
+    <div class="board-head">
+      <div>
+        <h1 id="myTitle"></h1>
+        <p class="sub">포스터를 그래프로 끌어다 놓으세요 · 드래그 중 <kbd>Esc</kbd>를 누르거나 그래프 밖에 놓으면 취소돼요</p>
+      </div>
+      <span class="chip">전체 공개</span>
+    </div>
+    <div class="graph-wrap"><div class="graph" id="myGraph"></div></div>
+    <div class="tray">
+      <div class="tray-head">
+        <h2>내 영화 목록<span id="trayCount"></span></h2>
+        <button class="btn primary sm" id="openSearch">+ 영화 추가</button>
+      </div>
+      <div class="tray-list" id="tray"></div>
+    </div>
+  </section>
+
+  <!-- 둘러보기 -->
+  <section class="view" id="view-explore">
+    <div class="scroll">
+      <div class="explore-inner">
+        <div class="explore-head">
+          <div>
+            <h1>다른 사람의 티어리스트</h1>
+            <p class="sub">모든 티어리스트는 공개돼요. 취향이 맞는 사람을 팔로우해 보세요.</p>
+          </div>
+          <div class="seg" id="exploreSeg">
+            <button class="is-active" data-filter="all">전체</button>
+            <button data-filter="following">팔로잉</button>
+          </div>
+        </div>
+        <div class="user-grid" id="userGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 사용자 상세 -->
+  <section class="view" id="view-user">
+    <div class="user-head">
+      <button class="back" id="backBtn" aria-label="뒤로">←</button>
+      <div class="avatar" id="userAvatar"></div>
+      <div class="grow">
+        <h1 id="userTitle"></h1>
+        <div class="chips" id="userChips"></div>
+      </div>
+      <button class="btn sm" id="userFollow"></button>
+    </div>
+    <div class="graph-wrap"><div class="graph" id="userGraph"></div></div>
+  </section>
+</main>
+
+<!-- 영화 검색 / 직접 등록 -->
+<dialog id="searchDlg">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h2 id="searchDlgTitle">영화 추가</h2>
+      <button class="dlg-close" data-close aria-label="닫기">✕</button>
+    </div>
+    <div class="dlg-body" id="searchPane">
+      <div class="search-box"><input id="searchInput" type="search" placeholder="영화 제목으로 검색 (예: 인셉션, Dune)" autocomplete="off"></div>
+      <div class="result-label" id="resultLabel">추천 영화</div>
+      <div class="results" id="results"></div>
+      <div class="manual-cta">
+        <span>찾는 영화가 없나요?</span>
+        <button class="btn primary sm" id="toManual">직접 등록하기</button>
+      </div>
+    </div>
+    <div class="dlg-body" id="manualPane" hidden>
+      <form class="form" id="manualForm" novalidate>
+        <div class="manual-grid">
+          <div class="form">
+            <div class="field">
+              <label for="mTitle">영화 제목</label>
+              <input id="mTitle" type="text" maxlength="60" placeholder="제목을 입력하세요">
+            </div>
+            <div class="field">
+              <label for="mYear">개봉 연도</label>
+              <input id="mYear" type="number" min="1888" max="2100" placeholder="예: 2024">
+            </div>
+            <div class="field">
+              <label>포스터 이미지 <span style="font-weight:400;color:var(--muted)">(선택)</span></label>
+              <div class="file-btn">
+                <label class="btn sm ghost" style="margin:0">이미지 선택<input id="mPoster" type="file" accept="image/*"></label>
+                <button type="button" class="btn sm ghost" id="mPosterClear" hidden>지우기</button>
+              </div>
+              <small>이미지를 고르지 않으면 제목으로 포스터를 만들어 드려요.</small>
+            </div>
+            <p class="err" id="mErr"></p>
+          </div>
+          <div class="preview" id="mPreview"></div>
+        </div>
+        <div class="dlg-foot">
+          <button type="button" class="btn ghost" id="backToSearch">검색으로</button>
+          <button type="submit" class="btn primary">목록에 등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<!-- 계정 -->
+<dialog id="accountDlg">
+  <div class="dlg">
+    <div class="dlg-head">
+      <h2 id="accTitle">계정 연결</h2>
+      <button class="dlg-close" data-close aria-label="닫기">✕</button>
+    </div>
+    <div class="dlg-body">
+      <form class="form" id="accForm" novalidate>
+        <p class="notice" id="accNotice"></p>
+        <div class="field">
+          <label for="accName">닉네임</label>
+          <input id="accName" type="text" maxlength="16" placeholder="2~16자">
+        </div>
+        <div class="field" id="accEmailField">
+          <label for="accEmail">이메일</label>
+          <input id="accEmail" type="email" placeholder="you@example.com">
+          <small>서버 없이 동작하는 버전이라 계정 정보는 이 브라우저에만 저장돼요.</small>
+        </div>
+        <p class="err" id="accErr"></p>
+        <div class="dlg-foot">
+          <button type="button" class="btn ghost" data-close>닫기</button>
+          <button type="submit" class="btn primary" id="accSubmit">계정에 연결</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<div class="credit">사진: Unsplash</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   데이터: 내장 영화 카탈로그 (영화 검색 API 대체)
+   ========================================================= */
+const CATALOG = [
+  ['c01','기생충',2019,'Parasite'],
+  ['c02','인터스텔라',2014,'Interstellar'],
+  ['c03','라라랜드',2016,'La La Land'],
+  ['c04','센과 치히로의 행방불명',2001,'Spirited Away'],
+  ['c05','어벤져스: 엔드게임',2019,'Avengers: Endgame'],
+  ['c06','범죄도시',2017,'The Outlaws'],
+  ['c07','타이타닉',1997,'Titanic'],
+  ['c08','토이 스토리',1995,'Toy Story'],
+  ['c09','올드보이',2003,'Oldboy'],
+  ['c10','아가씨',2016,'The Handmaiden'],
+  ['c11','부산행',2016,'Train to Busan'],
+  ['c12','극한직업',2019,'Extreme Job'],
+  ['c13','살인의 추억',2003,'Memories of Murder'],
+  ['c14','헤어질 결심',2022,'Decision to Leave'],
+  ['c15','서울의 봄',2023,'12.12: The Day'],
+  ['c16','파묘',2024,'Exhuma'],
+  ['c17','인셉션',2010,'Inception'],
+  ['c18','다크 나이트',2008,'The Dark Knight'],
+  ['c19','매트릭스',1999,'The Matrix'],
+  ['c20','해리 포터와 마법사의 돌',2001,"Harry Potter and the Sorcerer's Stone"],
+  ['c21','반지의 제왕: 반지 원정대',2001,'The Lord of the Rings: The Fellowship of the Ring'],
+  ['c22','겨울왕국',2013,'Frozen'],
+  ['c23','코코',2017,'Coco'],
+  ['c24','이웃집 토토로',1988,'My Neighbor Totoro'],
+  ['c25','하울의 움직이는 성',2004,"Howl's Moving Castle"],
+  ['c26','쇼생크 탈출',1994,'The Shawshank Redemption'],
+  ['c27','포레스트 검프',1994,'Forrest Gump'],
+  ['c28','위플래쉬',2014,'Whiplash'],
+  ['c29','탑건: 매버릭',2022,'Top Gun: Maverick'],
+  ['c30','듄',2021,'Dune'],
+  ['c31','오펜하이머',2023,'Oppenheimer'],
+  ['c32','범죄도시2',2022,'The Roundup'],
+  ['c33','인사이드 아웃',2015,'Inside Out'],
+  ['c34','어바웃 타임',2013,'About Time'],
+  ['c35','비긴 어게인',2013,'Begin Again'],
+  ['c36','괴물',2006,'The Host'],
+].map(([id,title,year,en]) => ({id,title,year,en}));
+/* 영화 분위기에 맞춘 Unsplash 공개 사진 (images.unsplash.com photo id) */
+const PHOTOS = {
+  c01:'1501691223387-dd0500403074', // 빗방울 맺힌 창문
+  c02:'1454789548928-9efd52dc4031', // 우주를 떠다니는 우주비행사
+  c03:'1562070268-b473c84732f1',    // 보랏빛 하늘 아래 도시
+  c04:'1751408621042-b8bf8fc04cd5', // 밤에 줄지어 켜진 등불
+  c05:'1464802686167-b939a6910659', // 푸른·보랏빛 은하
+  c06:'1695249747530-57460a88ad80', // 네온 간판 밤거리
+  c07:'1524679166686-04237b4667b4', // 거대한 파도
+  c08:'1527430253228-e93688616381', // 파란 로봇 장난감
+  c09:'1635728153497-9b57a40066cb', // 초록 조명의 긴 복도
+  c10:'1514539079130-25950c84af65', // 안개 속 고성
+  c11:'1580442374555-3def8fb41738', // 선로 위 열차
+  c12:'1608039755401-742074f0548d', // 프라이드 치킨
+  c13:'1516410529446-2c777cb7366d', // 흑백의 나무 사이 길
+  c14:'1470115209269-18dd2d7285cd', // 안개 낀 물가
+  c15:'1604928141064-207cea6f571f', // 밤의 도시 항공뷰
+  c16:'1766258863162-2fa31f7a1ee3', // 안개와 숲 속 오래된 탑
+  c17:'1493397212122-2b85dda8106b', // 물결 모양 건축물
+  c18:'1771056709299-a13a48e99400', // 불빛 가득한 밤 도시
+  c19:'1547190027-9156686aa2f0',    // 초록 디지털 코드
+  c20:'1519074069444-1ba4fff66d16', // 횃불 든 고건축 실내
+  c21:'1713002603663-373cdf5c30cd', // 초원과 산
+  c22:'1545354628-c454465de722',    // 금이 간 푸른 얼음
+  c23:'1476900164809-ff19b8ae5968', // 켜진 촛불들
+  c24:'1503435824048-a799a3a84bf7', // 비 오는 날의 초록 숲
+  c25:'1763475774904-30c2bb52fe4c', // 산 아래 코스모스 들판
+  c26:'1772354011434-e6d5ff04c211', // 수면 위 빗방울
+  c27:'1527380992061-b126c88cbb41', // 손 위로 떨어지는 흰 깃털
+  c28:'1519892300165-cb5542fb47c7', // 드럼과 드럼스틱
+  c29:'1572573385781-2fd4f8c1389e', // 비행운을 그리는 비행기
+  c30:'1542401886-65d6c61db217',    // 사막의 모래 언덕
+  c31:'1637039749824-f5fc959ffb2f', // 어둠 속 불꽃
+  c32:'1503899036084-c55cdd92da26', // 네온 가득한 번화가
+  c33:'1550850395-c17a8e90ad0a',    // 알록달록 풍선
+  c34:'1509048191080-d2984bad6ae5', // 회중시계
+  c35:'1654873239479-ae6de865ec45', // 길가의 기타와 의자
+  c36:'1768006274228-caf48a5d5db4', // 해 질 녘 강 위의 다리
+};
+CATALOG.forEach(m => { m.photo = PHOTOS[m.id]; });
+const CATALOG_MAP = Object.fromEntries(CATALOG.map(m => [m.id, m]));
+const INITIAL_IDS = ['c01','c02','c03','c04','c05','c06','c07','c08'];
+
+/* 다른 사용자 (예시 데이터). x = 재미(0 왼쪽 ~ 100 오른쪽), y = 위에서부터 %(0 = 취향 높음) */
+const SEED_USERS = [
+  {id:'s1',nickname:'시네필 민지',bio:'봉준호·박찬욱 필모그래피 정주행 중',followers:128,
+   items:[['c01',82,14],['c14',38,12],['c09',70,24],['c10',62,32],['c13',55,18],['c05',78,74],['c22',32,82]]},
+  {id:'s2',nickname:'팝콘요정',bio:'재밌으면 장땡! 액션·코미디 환영',followers:342,
+   items:[['c05',90,24],['c06',86,34],['c32',80,44],['c12',92,30],['c29',84,18],['c02',44,56],['c14',14,78]]},
+  {id:'s3',nickname:'지브리 러버',bio:'토토로랑 같이 살고 싶어요',followers:87,
+   items:[['c04',80,12],['c24',68,16],['c25',76,26],['c23',70,38],['c08',62,44],['c22',58,56],['c18',28,76]]},
+  {id:'s4',nickname:'밤샘무비',bio:'SF와 스릴러만 봐요',followers:215,
+   items:[['c02',86,12],['c17',90,20],['c19',78,28],['c30',54,22],['c31',40,32],['c11',78,58],['c03',24,84]]},
+  {id:'s5',nickname:'눈물버튼',bio:'울 수 있는 영화 추천 받아요',followers:64,
+   items:[['c07',60,12],['c34',70,10],['c35',64,24],['c26',56,18],['c27',62,30],['c03',74,16],['c05',82,70]]},
+  {id:'s6',nickname:'주말엔 극장',bio:'한 달에 네 편은 꼭 극장에서',followers:153,
+   items:[['c15',82,20],['c16',76,36],['c28',72,14],['c11',86,46],['c01',68,24],['c33',50,40],['c20',38,66]]},
+];
+const SEED_MAP = Object.fromEntries(SEED_USERS.map(u => [u.id, u]));
+
+/* =========================================================
+   저장소
+   ========================================================= */
+const KEY = 'movie-tier.v1';
+let state = load();
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){
+      const s = JSON.parse(raw);
+      if(s && s.me && Array.isArray(s.items)) {
+        s.custom = s.custom || {}; s.me.following = s.me.following || [];
+        // 좌표는 그래프 대비 비율(0~100)만 저장 — 이전 버전 값도 범위 안으로 정리
+        s.items.forEach(it => {
+          if(it.x == null || it.y == null || !isFinite(it.x) || !isFinite(it.y)) { it.x = it.y = null; return; }
+          it.x = Math.max(0, Math.min(100, +it.x)); it.y = Math.max(0, Math.min(100, +it.y));
+        });
+        return s;
+      }
+    }
+  }catch(e){}
+  return {
+    me:{ id:'u_'+rid(), nickname:'게스트'+String(Math.floor(1000+Math.random()*9000)), isGuest:true, email:null, following:[] },
+    custom:{},
+    items: INITIAL_IDS.map(id => ({id, x:null, y:null})),
+  };
+}
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+  catch(e){ toast('저장 공간이 부족해 저장하지 못했어요. 포스터 이미지를 줄여 보세요.'); return false; }
+}
+function rid(){ return Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4); }
+
+/* =========================================================
+   유틸
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').toLowerCase().replace(/[\s:·.,!?'"’\-_()]/g,'');
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+function hash(s){ let h=2166136261; for(const ch of s){ h^=ch.codePointAt(0); h=Math.imul(h,16777619);} return h>>>0; }
+function getMovie(id){ return CATALOG_MAP[id] || state.custom[id] || null; }
+
+let toastTimer;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- 포스터 생성 (외부 이미지 없이 SVG로) ---------- */
+const PALETTES = [
+  ['#ff3d9a','#2a0f1e','#fff'],
+  ['#141014','#ff3d9a','#fff'],
+  ['#ff8cc4','#141014','#fff'],
+  ['#3a1030','#ff6fb5','#ffe3f0'],
+  ['#1d1d2b','#ff9ecf','#fff'],
+  ['#c2185b','#140a10','#ffe3f0'],
+  ['#2b2130','#ffb3d6','#fff'],
+];
+function wrapTitle(title){
+  const max = 7, lines = [];
+  for(const word of title.split(/\s+/)){
+    let w = word;
+    while(w.length > max){ lines.push(w.slice(0,max)); w = w.slice(max); }
+    const last = lines[lines.length-1];
+    if(last !== undefined && (last + ' ' + w).length <= max) lines[lines.length-1] = last + ' ' + w;
+    else lines.push(w);
+  }
+  return lines.slice(0,4);
+}
+const posterCache = new Map();
+function posterOf(m){
+  if(m.poster) return m.poster;
+  const key = m.title + '|' + m.year;
+  if(posterCache.has(key)) return posterCache.get(key);
+  const h = hash(m.title);
+  const [a,b,t] = PALETTES[h % PALETTES.length];
+  const lines = wrapTitle(m.title);
+  const fs = lines.length > 3 ? 21 : 25;
+  const lh = fs + 5;
+  const startY = 262 - (lines.length-1)*lh;
+  const cx = 110 + (h>>3)%70, cy = 70 + (h>>5)%60, r = 46 + (h>>7)%30;
+  let deco;
+  switch((h>>9)%3){
+    case 0: deco = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${t}" opacity=".16"/><circle cx="${cx-30}" cy="${cy+40}" r="${r/2.4}" fill="${t}" opacity=".1"/>`; break;
+    case 1: deco = `<path d="M${cx} ${cy-r} L${cx+r*.29} ${cy-r*.31} L${cx+r} ${cy-r*.24} L${cx+r*.47} ${cy+r*.18} L${cx+r*.62} ${cy+r*.88} L${cx} ${cy+r*.52} L${cx-r*.62} ${cy+r*.88} L${cx-r*.47} ${cy+r*.18} L${cx-r} ${cy-r*.24} L${cx-r*.29} ${cy-r*.31}Z" fill="${t}" opacity=".18"/>`; break;
+    default: deco = `<g opacity=".14" fill="${t}">${[0,1,2,3,4].map(i=>`<rect x="-40" y="${30+i*34}" width="300" height="12" transform="rotate(-18 100 140)"/>`).join('')}</g>`;
+  }
+  const text = lines.map((l,i) => `<text x="16" y="${startY + i*lh}" font-size="${fs}" font-weight="800" fill="${t}" font-family="Apple SD Gothic Neo, Noto Sans KR, Malgun Gothic, sans-serif" letter-spacing="-0.5">${esc(l)}</text>`).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 290"><defs><linearGradient id="g" x1="0" y1="0" x2=".5" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="200" height="290" fill="url(#g)"/>${deco}<text x="16" y="30" font-size="13" font-weight="700" fill="${t}" opacity=".85" font-family="sans-serif" letter-spacing="2">${esc(m.year)}</text><text x="184" y="30" font-size="15" fill="${t}" text-anchor="end" opacity=".85">★</text>${text}</svg>`;
+  const uri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  posterCache.set(key, uri);
+  return uri;
+}
+
+/* 이미지 주소: 직접 올린 포스터 > Unsplash 사진 > 생성 포스터(실패 시 대체) */
+function photoURL(m, w){
+  return m.photo ? `https://images.unsplash.com/photo-${m.photo}?w=${w}&h=${Math.round(w*1.45)}&fit=crop&crop=entropy&auto=format&q=75` : null;
+}
+function imgAttrs(m, w = 360){
+  const fb = posterOf(m);
+  const src = m.poster || photoURL(m, w) || fb;
+  return `src="${src}"${src !== fb ? ` data-fb="${fb}"` : ''} referrerpolicy="no-referrer"`;
+}
+// 사진을 못 불러오면(오프라인 등) 생성 포스터로 교체
+document.addEventListener('error', e => {
+  const t = e.target;
+  if(t && t.tagName === 'IMG' && t.dataset.fb){ const fb = t.dataset.fb; delete t.dataset.fb; t.src = fb; }
+}, true);
+
+function cardHTML(m, {graph=false, readonly=false} = {}){
+  const btn = readonly ? '' : graph
+    ? `<button class="x" data-act="untrack" title="목록으로 되돌리기" aria-label="목록으로 되돌리기">↩</button>`
+    : `<button class="x" data-act="remove" title="목록에서 삭제" aria-label="목록에서 삭제">✕</button>`;
+  return `<img class="poster" ${imgAttrs(m)} alt="${esc(m.title)} 대표 이미지" draggable="false">
+    <div class="meta"><b title="${esc(m.title)}">${esc(m.title)}</b><span>${esc(m.year)}</span></div>${btn}`;
+}
+
+/* =========================================================
+   그래프
+   ========================================================= */
+function buildGraph(el){
+  el.innerHTML = `
+    <div class="q q1">재밌고 취향 저격</div>
+    <div class="q q2">취향이지만 심심함</div>
+    <div class="q q3">심심하고 취향 밖</div>
+    <div class="q q4">재밌지만 취향 밖</div>
+    <div class="axis-x"></div><div class="axis-y"></div>
+    <span class="ax ax-top">취향 높음</span>
+    <span class="ax ax-bottom">취향 낮음</span>
+    <span class="ax ax-right">재미 높음</span>
+    <span class="ax ax-left">재미 낮음</span>
+    <div class="graph-empty" hidden><span>아래 목록의 포스터를 여기로 끌어오세요</span></div>
+    <div class="cards"></div>`;
+}
+const myGraph = $('#myGraph'), userGraph = $('#userGraph');
+buildGraph(myGraph); buildGraph(userGraph);
+userGraph.querySelector('.graph-empty span').textContent = '아직 배치한 영화가 없어요';
+
+/* =========================================================
+   내 티어리스트 렌더링
+   ========================================================= */
+const trayEl = $('#tray');
+function renderMy(){
+  $('#myTitle').textContent = `${state.me.nickname}의 티어리스트`;
+  const cardsEl = myGraph.querySelector('.cards');
+  cardsEl.innerHTML = '';
+  const placed = state.items.filter(it => it.x != null);
+  placed.forEach(it => {
+    const m = getMovie(it.id); if(!m) return;
+    const el = document.createElement('div');
+    el.className = 'mcard g'; el.dataset.id = it.id;
+    el.dataset.x = it.x; el.dataset.y = it.y;
+    el.innerHTML = cardHTML(m, {graph:true});
+    bindCard(el, it);
+    cardsEl.appendChild(el);
+  });
+  myGraph.querySelector('.graph-empty').hidden = placed.length > 0;
+  layoutGraph(myGraph);
+
+  const trayItems = state.items.filter(it => it.x == null);
+  trayEl.innerHTML = '';
+  if(!trayItems.length){
+    trayEl.innerHTML = `<div class="tray-empty">${state.items.length ? '모든 영화를 배치했어요 ✦<br>' : '아직 영화가 없어요.<br>'}<b style="color:var(--pink-2)">+ 영화 추가</b>로 더 담아 보세요</div>`;
+  }
+  trayItems.forEach(it => {
+    const m = getMovie(it.id); if(!m) return;
+    const el = document.createElement('div');
+    el.className = 'mcard'; el.dataset.id = it.id;
+    el.innerHTML = cardHTML(m);
+    bindCard(el, it);
+    trayEl.appendChild(el);
+  });
+  $('#trayCount').textContent = ` ${trayItems.length} / 전체 ${state.items.length}`;
+}
+
+function bindCard(el, item){
+  el.addEventListener('pointerdown', e => onPointerDown(e, el, item));
+  const btn = el.querySelector('.x');
+  if(btn){
+    btn.addEventListener('pointerdown', e => e.stopPropagation());
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const m = getMovie(item.id);
+      if(btn.dataset.act === 'untrack'){
+        moveToEnd(item); item.x = item.y = null; save(); renderMy();
+        toast(`'${m.title}'을(를) 목록으로 되돌렸어요`);
+      }else{
+        if(!confirm(`'${m.title}'을(를) 내 목록에서 삭제할까요?`)) return;
+        state.items = state.items.filter(i => i !== item);
+        if(state.custom[item.id]) delete state.custom[item.id];
+        save(); renderMy(); toast('삭제했어요');
+      }
+    });
+  }
+}
+function moveToEnd(item){
+  state.items = state.items.filter(i => i !== item); state.items.push(item);
+}
+
+/* =========================================================
+   드래그 앤 드롭 (포인터 이벤트: 마우스/터치/펜 공통)
+   ========================================================= */
+let drag = null;
+
+function onPointerDown(e, el, item){
+  if(drag) return;
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  const rect = el.getBoundingClientRect();
+  drag = {
+    el, item, started:false, returning:false, pointerId:e.pointerId,
+    startX:e.clientX, startY:e.clientY, lastX:e.clientX, lastY:e.clientY,
+    offX:e.clientX - rect.left, offY:e.clientY - rect.top, w:rect.width, h:rect.height,
+    from: item.x == null ? 'tray' : 'graph', ghost:null,
+  };
+  if(e.pointerType === 'mouse') e.preventDefault();
+  window.addEventListener('pointermove', onPointerMove, {passive:false});
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerCancel);
+}
+
+function startDrag(){
+  const d = drag;
+  d.started = true;
+  const ghost = document.createElement('div');
+  ghost.className = 'drag-ghost';
+  const clone = d.el.cloneNode(true);
+  clone.classList.remove('g','pop');
+  clone.style.cssText = `width:${d.w}px;position:relative;left:auto;top:auto;transform:none`;
+  ghost.appendChild(clone);
+  ghost.style.width = d.w + 'px';
+  document.body.appendChild(ghost);
+  requestAnimationFrame(() => ghost.firstChild.style.transform = '');
+  d.ghost = ghost;
+  d.el.classList.add('is-source');
+  document.body.classList.add('is-dragging');
+  moveGhost();
+}
+
+function moveGhost(){
+  const d = drag;
+  d.ghost.style.transform = `translate(${d.lastX - d.offX}px, ${d.lastY - d.offY}px)`;
+  myGraph.classList.toggle('is-over', overGraph(d.lastX, d.lastY));
+}
+
+function overGraph(x,y){
+  const r = myGraph.getBoundingClientRect();
+  return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+}
+
+function onPointerMove(e){
+  if(!drag || e.pointerId !== drag.pointerId || drag.returning) return;
+  drag.lastX = e.clientX; drag.lastY = e.clientY;
+  if(!drag.started){
+    if(Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5) return;
+    startDrag();
+  }
+  e.preventDefault();
+  moveGhost();
+}
+
+function onPointerUp(e){
+  if(!drag || e.pointerId !== drag.pointerId || drag.returning) return;
+  if(!drag.started){ endDrag(); return; }
+  if(overGraph(e.clientX, e.clientY)) dropOnGraph();
+  else cancelDrag('그래프 밖에 놓아서 원래 자리로 돌아갔어요');
+}
+
+function onPointerCancel(e){
+  if(!drag || e.pointerId !== drag.pointerId || drag.returning) return;
+  if(!drag.started){ endDrag(); return; }
+  cancelDrag();
+}
+
+function detach(){
+  window.removeEventListener('pointermove', onPointerMove);
+  window.removeEventListener('pointerup', onPointerUp);
+  window.removeEventListener('pointercancel', onPointerCancel);
+  myGraph.classList.remove('is-over');
+  document.body.classList.remove('is-dragging');
+}
+function endDrag(){ detach(); drag = null; }
+
+/* 드롭 성공: 해당 위치에 배치 + 스파크 */
+function dropOnGraph(){
+  const d = drag;
+  const g = myGraph.getBoundingClientRect();
+  const cx = d.lastX - d.offX + d.w/2;
+  const cy = d.lastY - d.offY + d.h/2;
+  const item = d.item;
+  // 그래프 내부(테두리 제외) 기준 비율로 저장
+  const ix = cx - g.left - myGraph.clientLeft, iy = cy - g.top - myGraph.clientTop;
+  item.x = Math.round(clamp(ix / myGraph.clientWidth * 100, 0, 100) * 100) / 100;
+  item.y = Math.round(clamp(iy / myGraph.clientHeight * 100, 0, 100) * 100) / 100;
+  moveToEnd(item);
+  d.ghost.remove();
+  endDrag();
+  renderMy();
+  const el = myGraph.querySelector(`.mcard[data-id="${CSS.escape(item.id)}"]`);
+  if(el){
+    const r = el.getBoundingClientRect();
+    el.classList.add('pop');
+    spark(r.left + r.width/2, r.top + r.height/2);
+  }
+  save();
+}
+
+/* =========================================================
+   반응형 배치
+   - 저장값: 재미(x)·취향(y)을 그래프 대비 비율(0~100)로만 저장
+   - 표시: 현재 그래프 크기로 카드 크기와 픽셀 위치를 매번 계산
+   - 화면/그래프 크기가 바뀌면 ResizeObserver가 다시 계산
+   ========================================================= */
+function layoutGraph(graph){
+  const W = graph.clientWidth, H = graph.clientHeight;
+  if(!W || !H) return;                          // 숨겨진 화면은 보일 때 다시 계산
+  const cw = Math.round(clamp(Math.min(W * 0.085, H * 0.2), 50, 100));
+  graph.style.setProperty('--gcw', cw + 'px');
+  graph.classList.toggle('compact', cw < 66);
+  const cards = graph.querySelectorAll('.cards > .mcard.g');
+  if(cards.length){
+    const ch = cards[0].offsetHeight || cw * 1.75;
+    const pad = 6;
+    cards.forEach(el => {
+      const x = +el.dataset.x, y = +el.dataset.y;
+      // 비율 위치를 픽셀로 환산하되, 카드가 그래프 밖으로 잘리지 않게 표시만 보정 (저장값은 그대로)
+      el.style.left = clamp(x / 100 * W, cw / 2 + pad, W - cw / 2 - pad) + 'px';
+      el.style.top  = clamp(y / 100 * H, ch / 2 + pad, H - ch / 2 - pad) + 'px';
+    });
+  }
+  graph.classList.add('laid');
+}
+const graphRO = new ResizeObserver(entries => {
+  entries.forEach(en => { if(!(drag && drag.started)) layoutGraph(en.target); });
+});
+graphRO.observe(myGraph); graphRO.observe(userGraph);
+
+/* 드래그 취소: 시작 전 위치로 복귀 (애니메이션 없음 — 스파크 X) */
+function cancelDrag(msg){
+  const d = drag;
+  if(!d || d.returning) return;
+  d.returning = true;
+  detach();
+  const target = d.el.getBoundingClientRect();
+  const ghost = d.ghost;
+  ghost.classList.add('returning');
+  ghost.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1)';
+  ghost.style.transform = `translate(${target.left}px, ${target.top}px)`;
+  const done = () => {
+    ghost.remove();
+    d.el.classList.remove('is-source');
+    if(drag === d) drag = null;
+    layoutGraph(myGraph);
+  };
+  ghost.addEventListener('transitionend', done, {once:true});
+  setTimeout(done, 400);
+  if(msg) toast(msg);
+}
+
+window.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && drag && drag.started && !drag.returning){
+    e.preventDefault(); cancelDrag('드래그를 취소했어요');
+  }
+});
+window.addEventListener('blur', () => { if(drag && drag.started && !drag.returning) cancelDrag(); });
+window.addEventListener('contextmenu', e => {
+  if(drag && drag.started){ e.preventDefault(); if(!drag.returning) cancelDrag('드래그를 취소했어요'); }
+});
+
+/* =========================================================
+   스파크 애니메이션 (핑크/블랙 별)
+   ========================================================= */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function spark(x, y){
+  const layer = document.createElement('div');
+  layer.className = 'spark';
+  layer.style.transform = `translate(${x}px, ${y}px)`;
+  document.body.appendChild(layer);
+
+  const ring = document.createElement('span');
+  ring.className = 'ring';
+  layer.appendChild(ring);
+  ring.animate([
+    {transform:'translate(-50%,-50%) scale(.4)', opacity:.9},
+    {transform:'translate(-50%,-50%) scale(6)', opacity:0}
+  ], {duration:600, easing:'cubic-bezier(.2,.8,.2,1)', fill:'forwards'});
+
+  const colors = ['#ff3d9a','#141014','#ff8cc4','#141014','#ff3d9a','#ffb3d6'];
+  const glyphs = ['★','✦','★','✧','★'];
+  const n = reduceMotion ? 8 : 18;
+  for(let i=0;i<n;i++){
+    const s = document.createElement('i');
+    s.textContent = glyphs[i % glyphs.length];
+    s.style.color = colors[i % colors.length];
+    const size = 12 + Math.random()*18;
+    s.style.fontSize = size + 'px';
+    if(i % 3 === 0) s.style.textShadow = '0 0 6px rgba(255,61,154,.7)';
+    layer.appendChild(s);
+    const ang = (i / n) * Math.PI * 2 + Math.random()*.5;
+    const dist = 55 + Math.random()*75;
+    const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist;
+    const rot = (Math.random()*360 - 180) | 0;
+    s.animate([
+      {transform:'translate(-50%,-50%) scale(.2) rotate(0deg)', opacity:1},
+      {transform:`translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(1.1) rotate(${rot}deg)`, opacity:1, offset:.55},
+      {transform:`translate(calc(-50% + ${dx*1.25}px), calc(-50% + ${dy*1.25 + 18}px)) scale(.4) rotate(${rot*1.4}deg)`, opacity:0}
+    ], {duration: reduceMotion ? 450 : 750 + Math.random()*350, easing:'cubic-bezier(.15,.75,.3,1)', fill:'forwards'});
+  }
+  setTimeout(() => layer.remove(), 1300);
+}
+
+/* =========================================================
+   영화 검색 / 직접 등록
+   ========================================================= */
+const searchDlg = $('#searchDlg');
+const searchInput = $('#searchInput');
+const resultsEl = $('#results');
+
+$('#openSearch').addEventListener('click', () => {
+  showSearchPane();
+  searchInput.value = '';
+  renderResults();
+  searchDlg.showModal();
+  setTimeout(() => searchInput.focus(), 30);
+});
+
+function inMyList(id){ return state.items.some(i => i.id === id); }
+
+function renderResults(){
+  const q = norm(searchInput.value);
+  let list;
+  if(!q){
+    $('#resultLabel').textContent = '추천 영화';
+    list = CATALOG.slice(8, 20);
+  }else{
+    list = CATALOG.filter(m => norm(m.title).includes(q) || norm(m.en).includes(q) || String(m.year) === q);
+    $('#resultLabel').textContent = `검색 결과 ${list.length}건`;
+  }
+  if(!list.length){
+    resultsEl.innerHTML = `<div class="no-result">'${esc(searchInput.value.trim())}'에 대한 검색 결과가 없어요.<br>아래에서 직접 등록할 수 있어요.</div>`;
+    return;
+  }
+  resultsEl.innerHTML = list.map(m => {
+    const added = inMyList(m.id);
+    return `<div class="result">
+      <img ${imgAttrs(m, 160)} alt="" loading="lazy">
+      <div class="info"><b>${esc(m.title)}</b><span>${m.year} · ${esc(m.en)}</span></div>
+      <button class="btn sm ${added ? 'ghost' : 'dark'}" data-add="${m.id}" ${added ? 'disabled' : ''}>${added ? '추가됨' : '추가'}</button>
+    </div>`;
+  }).join('');
+}
+searchInput.addEventListener('input', renderResults);
+resultsEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-add]'); if(!b) return;
+  const m = CATALOG_MAP[b.dataset.add];
+  if(inMyList(m.id)) return;
+  state.items.push({id:m.id, x:null, y:null});
+  save(); renderMy(); renderResults();
+  trayEl.scrollTo({left: trayEl.scrollWidth, behavior:'smooth'});
+  toast(`'${m.title}'을(를) 목록에 담았어요`);
+});
+
+/* 직접 등록 */
+let manualPoster = null;
+function showSearchPane(){ $('#searchPane').hidden = false; $('#manualPane').hidden = true; $('#searchDlgTitle').textContent = '영화 추가'; }
+function showManualPane(){
+  $('#searchPane').hidden = true; $('#manualPane').hidden = false; $('#searchDlgTitle').textContent = '영화 직접 등록';
+  $('#mTitle').value = searchInput.value.trim();
+  $('#mYear').value = '';
+  $('#mErr').textContent = '';
+  manualPoster = null; $('#mPoster').value = ''; $('#mPosterClear').hidden = true;
+  updatePreview();
+  setTimeout(() => $('#mTitle').focus(), 30);
+}
+$('#toManual').addEventListener('click', showManualPane);
+$('#backToSearch').addEventListener('click', () => { showSearchPane(); searchInput.focus(); });
+
+function updatePreview(){
+  const title = $('#mTitle').value.trim() || '영화 제목';
+  const year = $('#mYear').value.trim() || '연도';
+  $('#mPreview').innerHTML = `<div class="mcard">${cardHTML({title, year, poster:manualPoster}, {readonly:true})}</div>`;
+}
+$('#mTitle').addEventListener('input', updatePreview);
+$('#mYear').addEventListener('input', updatePreview);
+
+$('#mPoster').addEventListener('change', async e => {
+  const f = e.target.files[0]; if(!f) return;
+  try{
+    manualPoster = await resizeImage(f);
+    $('#mPosterClear').hidden = false;
+    updatePreview();
+  }catch(err){ $('#mErr').textContent = '이미지를 읽지 못했어요. 다른 파일을 골라 주세요.'; }
+});
+$('#mPosterClear').addEventListener('click', () => {
+  manualPoster = null; $('#mPoster').value = ''; $('#mPosterClear').hidden = true; updatePreview();
+});
+
+function resizeImage(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = reject;
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const W = 240, H = 348;
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const ctx = c.getContext('2d');
+        const s = Math.max(W / img.width, H / img.height);
+        const w = img.width * s, h = img.height * s;
+        ctx.drawImage(img, (W - w)/2, (H - h)/2, w, h);
+        resolve(c.toDataURL('image/jpeg', .82));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+$('#manualForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('#mTitle').value.trim();
+  const year = parseInt($('#mYear').value, 10);
+  const err = $('#mErr');
+  if(!title){ err.textContent = '영화 제목을 입력해 주세요.'; $('#mTitle').focus(); return; }
+  if(!year || year < 1888 || year > 2100){ err.textContent = '개봉 연도를 4자리 숫자로 입력해 주세요.'; $('#mYear').focus(); return; }
+  const dup = state.items.map(i => getMovie(i.id)).find(m => m && norm(m.title) === norm(title) && +m.year === year);
+  if(dup){ err.textContent = '이미 내 목록에 있는 영화예요.'; return; }
+  const id = 'm_' + rid();
+  state.custom[id] = {id, title, year, poster:manualPoster || undefined, custom:true};
+  state.items.push({id, x:null, y:null});
+  if(!save()){ delete state.custom[id]; state.items.pop(); return; }
+  renderMy();
+  searchDlg.close();
+  trayEl.scrollTo({left: trayEl.scrollWidth, behavior:'smooth'});
+  toast(`'${title}'을(를) 직접 등록했어요`);
+});
+
+/* =========================================================
+   계정 (비회원 → 계정 연결)
+   ========================================================= */
+const accountDlg = $('#accountDlg');
+function renderAccount(){
+  const me = state.me;
+  $('#accountBtn').innerHTML = me.isGuest
+    ? `<span class="badge">비회원</span>계정 연결하기`
+    : `<span class="badge member">회원</span>${esc(me.nickname)}`;
+}
+$('#accountBtn').addEventListener('click', () => {
+  const me = state.me;
+  $('#accErr').textContent = '';
+  $('#accName').value = me.isGuest ? '' : me.nickname;
+  $('#accName').placeholder = me.nickname;
+  if(me.isGuest){
+    $('#accTitle').textContent = '계정 연결';
+    $('#accNotice').innerHTML = `지금은 <b>비회원(${esc(me.nickname)})</b>으로 이용 중이에요.<br>계정을 연결하면 지금까지 만든 티어리스트(영화 ${state.items.length}편)가 그대로 계정에 옮겨져요.`;
+    $('#accEmailField').hidden = false;
+    $('#accEmail').value = '';
+    $('#accSubmit').textContent = '계정에 연결';
+  }else{
+    $('#accTitle').textContent = '내 계정';
+    $('#accNotice').innerHTML = `<b>${esc(me.email)}</b> 계정에 티어리스트가 연결되어 있어요.`;
+    $('#accEmailField').hidden = true;
+    $('#accSubmit').textContent = '닉네임 저장';
+  }
+  accountDlg.showModal();
+});
+$('#accForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const me = state.me, err = $('#accErr');
+  const name = $('#accName').value.trim() || me.nickname;
+  if(name.length < 2){ err.textContent = '닉네임은 2자 이상이어야 해요.'; return; }
+  if(me.isGuest){
+    const email = $('#accEmail').value.trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ err.textContent = '올바른 이메일 주소를 입력해 주세요.'; $('#accEmail').focus(); return; }
+    me.isGuest = false; me.email = email; me.nickname = name;
+    save(); accountDlg.close(); renderAll();
+    toast('비회원 티어리스트를 계정에 연결했어요');
+  }else{
+    me.nickname = name; save(); accountDlg.close(); renderAll();
+    toast('닉네임을 바꿨어요');
+  }
+});
+
+document.querySelectorAll('dialog [data-close]').forEach(b => b.addEventListener('click', () => b.closest('dialog').close()));
+document.querySelectorAll('dialog').forEach(d => d.addEventListener('click', e => { if(e.target === d) d.close(); }));
+
+/* =========================================================
+   둘러보기 / 팔로우
+   ========================================================= */
+let exploreFilter = 'all';
+let currentUserId = null;
+
+function isFollowing(id){ return state.me.following.includes(id); }
+function toggleFollow(id){
+  const f = state.me.following;
+  const u = SEED_MAP[id];
+  if(isFollowing(id)){ state.me.following = f.filter(x => x !== id); toast(`${u.nickname} 님 팔로우를 취소했어요`); }
+  else{ f.push(id); toast(`${u.nickname} 님을 팔로우했어요`); }
+  save();
+}
+function followerCount(u){ return u.followers + (isFollowing(u.id) ? 1 : 0); }
+function avatarColor(name){ const c = ['#141014','#ff3d9a','#c2185b','#3a1030','#ff6fb5']; return c[hash(name) % c.length]; }
+
+function userItems(id){
+  if(id === 'me') return state.items.filter(i => i.x != null).map(i => ({id:i.id, x:i.x, y:i.y}));
+  return SEED_MAP[id].items.map(([mid,x,y]) => ({id:mid, x, y}));
+}
+function miniGraph(items){
+  return items.map(it => {
+    const m = getMovie(it.id); if(!m) return '';
+    return `<img ${imgAttrs(m, 120)} alt="" loading="lazy" style="left:${clamp(it.x,6,94)}%;top:${clamp(it.y,12,88)}%">`;
+  }).join('');
+}
+function overlapCount(id){
+  const mine = new Set(state.items.map(i => i.id));
+  return userItems(id).filter(i => mine.has(i.id)).length;
+}
+
+function renderExplore(){
+  const grid = $('#userGrid');
+  const users = SEED_USERS.filter(u => exploreFilter === 'all' || isFollowing(u.id));
+  let html = '';
+  if(exploreFilter === 'all'){
+    const myItems = userItems('me');
+    html += `<article class="ucard me">
+      <div class="urow">
+        <div class="avatar" style="background:var(--pink)">${esc(state.me.nickname[0])}</div>
+        <div><div class="uname">${esc(state.me.nickname)}<em>나</em></div>
+        <div class="ustat">배치한 영화 ${myItems.length}편 · 팔로잉 ${state.me.following.length}명</div></div>
+      </div>
+      <div class="mini" data-open="me">${miniGraph(myItems)}</div>
+      <div class="uactions"><button class="btn sm" data-go-my>내 티어리스트로</button></div>
+    </article>`;
+  }
+  html += users.map(u => {
+    const f = isFollowing(u.id);
+    const ov = overlapCount(u.id);
+    return `<article class="ucard">
+      <div class="urow">
+        <div class="avatar" style="background:${avatarColor(u.nickname)}">${esc(u.nickname[0])}</div>
+        <div><div class="uname">${esc(u.nickname)}</div>
+        <div class="ustat">영화 ${u.items.length}편 · 팔로워 ${followerCount(u)}명${ov ? ` · 나와 겹치는 영화 ${ov}편` : ''}</div></div>
+      </div>
+      <p class="ubio">${esc(u.bio)}</p>
+      <div class="mini" data-open="${u.id}">${miniGraph(userItems(u.id))}</div>
+      <div class="uactions">
+        <button class="btn sm ghost" data-open="${u.id}">티어리스트 보기</button>
+        <button class="btn sm ${f ? 'following' : 'primary'}" data-follow="${u.id}">${f ? '팔로잉 ✓' : '팔로우'}</button>
+      </div>
+    </article>`;
+  }).join('');
+  if(exploreFilter === 'following' && !users.length){
+    html = `<div class="empty-state">아직 팔로우한 사람이 없어요.<br>‘전체’에서 취향이 맞는 사람을 찾아보세요.</div>`;
+  }
+  grid.innerHTML = html;
+}
+$('#userGrid').addEventListener('click', e => {
+  const fb = e.target.closest('[data-follow]');
+  if(fb){ toggleFollow(fb.dataset.follow); renderExplore(); return; }
+  if(e.target.closest('[data-go-my]')){ showView('my'); return; }
+  const ob = e.target.closest('[data-open]');
+  if(ob){ ob.dataset.open === 'me' ? showView('my') : openUser(ob.dataset.open); }
+});
+$('#exploreSeg').addEventListener('click', e => {
+  const b = e.target.closest('[data-filter]'); if(!b) return;
+  exploreFilter = b.dataset.filter;
+  document.querySelectorAll('#exploreSeg button').forEach(x => x.classList.toggle('is-active', x === b));
+  renderExplore();
+});
+
+function openUser(id){
+  currentUserId = id;
+  showView('user');
+}
+function renderUser(){
+  const u = SEED_MAP[currentUserId]; if(!u) return;
+  $('#userAvatar').textContent = u.nickname[0];
+  $('#userAvatar').style.background = avatarColor(u.nickname);
+  $('#userTitle').textContent = `${u.nickname}의 티어리스트`;
+  const ov = overlapCount(u.id);
+  $('#userChips').innerHTML = `<span class="chip">팔로워 ${followerCount(u)}명</span><span class="chip dark">영화 ${u.items.length}편</span>${ov ? `<span class="chip">나와 겹치는 영화 ${ov}편</span>` : ''}`;
+  const fb = $('#userFollow');
+  const f = isFollowing(u.id);
+  fb.className = `btn sm ${f ? 'following' : 'primary'}`;
+  fb.textContent = f ? '팔로잉 ✓' : '팔로우';
+  const cards = userGraph.querySelector('.cards');
+  const items = userItems(u.id);
+  cards.innerHTML = items.map(it => {
+    const m = getMovie(it.id);
+    return `<div class="mcard g ro" data-x="${it.x}" data-y="${it.y}">${cardHTML(m, {graph:true, readonly:true})}</div>`;
+  }).join('');
+  userGraph.querySelector('.graph-empty').hidden = items.length > 0;
+  layoutGraph(userGraph);
+}
+$('#userFollow').addEventListener('click', () => { toggleFollow(currentUserId); renderUser(); });
+$('#backBtn').addEventListener('click', () => showView('explore'));
+
+/* =========================================================
+   화면 전환
+   ========================================================= */
+function showView(name){
+  if(drag && drag.started) cancelDrag();
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('is-active', v.id === 'view-' + name));
+  const tab = name === 'user' ? 'explore' : name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('is-active', t.dataset.view === tab));
+  if(name === 'my') renderMy();
+  if(name === 'explore') renderExplore();
+  if(name === 'user') renderUser();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showView(t.dataset.view)));
+
+function renderAll(){
+  renderAccount();
+  renderMy();
+  if($('#view-explore').classList.contains('is-active')) renderExplore();
+  if($('#view-user').classList.contains('is-active')) renderUser();
+}
+
+renderAll();
+save();
+})();
+</script>
+</body>
+</html>
