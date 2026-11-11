@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LP Collection Showcase - LP 컬렉션 진열장</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fbf7f3',
+                            100: '#f6ede4',
+                            500: '#d97706',
+                            900: '#18181b',
+                            950: '#0f0f11'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Pretendard Webfont */
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+        
+        /* Custom Scrollbar Handling to avoid dual horizontal scrollbars */
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #0d0d0e;
+            color: #e4e4e7;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121215;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #27272a;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f46;
+        }
+
+        /* Vinyl Record Animations */
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spinSlow 8s linear infinite;
+        }
+
+        /* 3D Record Crate View Styling */
+        .perspective-container {
+            perspective: 1200px;
+            perspective-origin: 50% 30%;
+        }
+
+        .crate-container {
+            transform-style: preserve-3d;
+        }
+
+        /* Crate Item Hover / Active Animations */
+        .crate-item {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .crate-item:hover {
+            transform: translateY(-40px) translateZ(30px) rotateX(10deg) !important;
+            z-index: 50 !important;
+        }
+
+        /* Vinyl Sliding Animation inside Crate & Grid */
+        .vinyl-disc {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .crate-item:hover .vinyl-disc,
+        .grid-card:hover .vinyl-disc {
+            transform: translateY(-45%) rotate(45deg) !important;
+        }
+
+        /* Custom Glassmorphism */
+        .glass-panel {
+            background: rgba(24, 24, 27, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-zinc-200 antialiased selection:bg-amber-500 selection:text-black">
+
+    <!-- Header & Summary Bar -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-zinc-800/80 px-4 lg:px-8 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 shadow-lg shadow-amber-500/5">
+                    <i data-lucide="disc" class="w-6 h-6 animate-spin-slow"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        LP COLLECTION
+                        <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 border border-zinc-700">SHOWCASE</span>
+                    </h1>
+                    <p class="text-xs text-zinc-400">아날로그 감성의 바이닐 컬렉션 진열장</p>
+                </div>
+            </div>
+
+            <!-- Total Stats Chips -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs">
+                    <span class="text-zinc-400">총 소장 LP</span>
+                    <span id="total-count-chip" class="font-bold text-white text-sm">0</span>
+                    <span class="text-zinc-500">장</span>
+                </div>
+                <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs">
+                    <span class="text-amber-500/80">총 구매 금액</span>
+                    <span id="total-price-chip" class="font-bold text-amber-400 text-sm">₩0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 flex-1">
+
+        <!-- Controls Bar: Filter, Search, Sort, View Switcher -->
+        <div class="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/80">
+            
+            <!-- Left Controls: Search & Genre -->
+            <div class="flex flex-wrap items-center gap-3 flex-1">
+                <!-- Search Input -->
+                <div class="relative min-w-[200px] flex-1 sm:flex-initial">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"></i>
+                    <input type="text" id="search-input" placeholder="앨범명 또는 아티스트 검색..." 
+                        class="w-full pl-9 pr-4 py-2 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 transition-colors">
+                </div>
+
+                <!-- Genre Dropdown -->
+                <div class="relative">
+                    <select id="genre-select" class="appearance-none bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+                        <option value="ALL">장르: 전체</option>
+                        <option value="K-Indie">K-Indie</option>
+                        <option value="Indie/R&B">Indie/R&B</option>
+                        <option value="Indie Rock">Indie Rock</option>
+                        <option value="Indie Pop">Indie Pop</option>
+                        <option value="Ballad">Ballad</option>
+                        <option value="Indie Folk">Indie Folk</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
+                </div>
+
+                <!-- Sort Option Dropdown -->
+                <div class="relative">
+                    <select id="sort-select" class="appearance-none bg-zinc-950 border border-zinc-800 text-xs text-zinc-300 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:border-amber-500 cursor-pointer">
+                        <option value="year-desc">정렬: 최신연도순</option>
+                        <option value="year-asc">정렬: 오래된연도순</option>
+                        <option value="price-desc">정렬: 높은가격순</option>
+                        <option value="price-asc">정렬: 낮은가격순</option>
+                        <option value="title-asc">정렬: 가나다순</option>
+                    </select>
+                    <i data-lucide="chevron-down" class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Right Controls: View Switcher & Action Buttons -->
+            <div class="flex items-center gap-3 self-end lg:self-auto">
+                
+                <!-- View Switcher Toggle -->
+                <div class="flex items-center bg-zinc-950 border border-zinc-800 p-1 rounded-xl">
+                    <button id="view-crate-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-amber-500 text-zinc-950 shadow-sm" title="3D LP 랙 뷰">
+                        <i data-lucide="box" class="w-3.5 h-3.5"></i>
+                        <span>3D 랙</span>
+                    </button>
+                    <button id="view-grid-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all" title="그리드 뷰">
+                        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                        <span>그리드</span>
+                    </button>
+                </div>
+
+                <!-- Add LP Button -->
+                <button id="open-add-modal-btn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-white text-zinc-950 text-xs font-semibold transition-all active:scale-95 shadow-md">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    <span>LP 추가</span>
+                </button>
+
+                <!-- Reset Data Button -->
+                <button id="reset-data-btn" class="p-2 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-rose-400 hover:border-rose-900/50 transition-colors" title="데이터 초기화">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Content Display Area -->
+        <div id="content-display-area" class="w-full relative min-h-[500px]">
+
+            <!-- 1. 3D Record Crate View Container -->
+            <div id="crate-view-container" class="perspective-container py-12 px-4 flex flex-col items-center">
+                <!-- Record Crate Frame -->
+                <div class="relative w-full max-w-4xl min-h-[420px] bg-gradient-to-b from-zinc-900/90 to-zinc-950/95 border border-zinc-800 rounded-3xl p-6 sm:p-10 shadow-2xl overflow-hidden">
+                    
+                    <!-- Top Crate Edge Visual -->
+                    <div class="absolute top-0 left-0 right-0 h-3 bg-zinc-800/80 border-b border-zinc-700/50"></div>
+
+                    <!-- Inner Overlapping Stack -->
+                    <div id="crate-stack" class="crate-container relative min-h-[360px] flex items-end justify-center pt-10">
+                        <!-- Items rendered via JS -->
+                    </div>
+
+                    <!-- Crate Front Label -->
+                    <div class="absolute bottom-3 right-6 flex items-center gap-2 text-[10px] text-zinc-600 font-mono tracking-widest uppercase">
+                        <i data-lucide="archive" class="w-3 h-3"></i> CRATE NO. 01 / VINYL COLLECTION
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Modern Grid View Container -->
+            <div id="grid-view-container" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <!-- Items rendered via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden py-24 flex flex-col items-center justify-center text-center">
+                <div class="w-16 h-16 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-600 mb-4">
+                    <i data-lucide="disc-3" class="w-8 h-8"></i>
+                </div>
+                <p class="text-zinc-400 font-medium">검색 또는 조건에 일치하는 LP가 없습니다.</p>
+                <p class="text-xs text-zinc-600 mt-1">검색어를 변경하거나 다른 장르를 선택해 보세요.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-zinc-900 py-6 px-4 text-center text-xs text-zinc-600">
+        <p>© 2026 LP Collection Showcase. Minimalist Vinyl Display System.</p>
+    </footer>
+
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- LP Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="relative w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300 overflow-hidden">
+            
+            <!-- Close Button -->
+            <button id="close-detail-modal" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+
+            <div id="detail-modal-body" class="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                <!-- Modal Body Content Inserted Dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add LP Modal -->
+    <div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300">
+            
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-amber-500"></i>
+                    새 LP 음반 추가
+                </h3>
+                <button id="close-add-modal" class="w-8 h-8 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <form id="add-lp-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">앨범 제목 *</label>
+                    <input type="text" id="add-title" required placeholder="예: 3집 TEAM BABY" 
+                        class="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">아티스트 *</label>
+                    <input type="text" id="add-artist" required placeholder="예: 검정치마" 
+                        class="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">장르 *</label>
+                        <select id="add-genre" required class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-300 focus:outline-none focus:border-amber-500">
+                            <option value="K-Indie">K-Indie</option>
+                            <option value="Indie/R&B">Indie/R&B</option>
+                            <option value="Indie Rock">Indie Rock</option>
+                            <option value="Indie Pop">Indie Pop</option>
+                            <option value="Ballad">Ballad</option>
+                            <option value="Indie Folk">Indie Folk</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">발매연도 *</label>
+                        <input type="number" id="add-year" min="1950" max="2030" value="2023" required 
+                            class="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">구매 가격 (원) *</label>
+                    <input type="number" id="add-price" min="0" step="1000" placeholder="45000" required 
+                        class="w-full px-3.5 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs text-zinc-400 mb-1">커버 이미지 스타일 선택</label>
+                    <select id="add-cover-preset" class="w-full px-3 py-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-xs text-zinc-300 focus:outline-none focus:border-amber-500">
+                        <option value="preset-1">미니멀 다크 모노그램</option>
+                        <option value="preset-2">어반 앰버 그라디언트</option>
+                        <option value="preset-3">에메랄드 인디 에디션</option>
+                        <option value="preset-4">딥 블루 클래식</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" id="cancel-add-btn" class="px-4 py-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-xs text-zinc-400 hover:text-white transition-colors">
+                        취소
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold transition-colors">
+                        등록하기
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // Default Initial Sample Data (10 Items as specified in spec)
+        const DEFAULT_LP_DATA = [
+            {
+                id: 'lp-1',
+                artist: '검정치마',
+                title: '1집 201',
+                genre: 'K-Indie',
+                year: 2008,
+                price: 45000,
+                colorGradient: 'from-stone-900 via-neutral-900 to-amber-950',
+                description: '한국 인디 씬의 역사적인 데뷔작. 강렬하고 솔직한 감성과 시대를 관통하는 독보적인 멜로디의 201 앨범.'
+            },
+            {
+                id: 'lp-2',
+                artist: '검정치마',
+                title: "2집 Don't You Worry Baby",
+                genre: 'K-Indie',
+                year: 2011,
+                price: 48000,
+                colorGradient: 'from-amber-950 via-zinc-900 to-amber-900',
+                description: '한층 깊어진 서정성과 어쿠스틱 사운드가 빛을 발하는 검정치마의 두 번째 정규 앨범.'
+            },
+            {
+                id: 'lp-3',
+                artist: '검정치마',
+                title: '3집 TEAM BABY',
+                genre: 'K-Indie',
+                year: 2017,
+                price: 55000,
+                colorGradient: 'from-rose-950 via-zinc-900 to-neutral-900',
+                description: '사랑이라는 테마를 아름답고 위트 있게 풀어낸 명반. 대표곡 Everything, 나랑 아니면 수록.'
+            },
+            {
+                id: 'lp-4',
+                artist: 'wave to earth',
+                title: '0.1 flaws and all.',
+                genre: 'Indie/R&B',
+                year: 2023,
+                price: 62000,
+                colorGradient: 'from-slate-900 via-zinc-900 to-zinc-800',
+                description: '글로벌 리스너들을 사로잡은 웨이브투어스의 대표 정규 LP. 감각적인 로파이 빈티지 사운드.'
+            },
+            {
+                id: 'lp-5',
+                artist: 'wave to earth',
+                title: 'summer flows 0.02',
+                genre: 'Indie Rock',
+                year: 2020,
+                price: 52000,
+                colorGradient: 'from-emerald-950 via-zinc-900 to-teal-950',
+                description: '여름날의 휴식 같은 잔잔한 파도 소리와 재지한 기타 선율이 인상적인 EP LP.'
+            },
+            {
+                id: 'lp-6',
+                artist: 'ALEPH',
+                title: '1집 1',
+                genre: 'Indie Pop',
+                year: 2019,
+                price: 43000,
+                colorGradient: 'from-zinc-900 via-stone-900 to-zinc-950',
+                description: '알레프(ALEPH) 특유의 담담하면서도 묵직한 울림을 주는 섬세한 노랫말과 보컬이 돋보이는 음반.'
+            },
+            {
+                id: 'lp-7',
+                artist: 'ALEPH',
+                title: '하카다나 (Hakadana)',
+                genre: 'Indie Pop',
+                year: 2020,
+                price: 39000,
+                colorGradient: 'from-indigo-950 via-zinc-900 to-slate-950',
+                description: '서정적이고 오묘한 분위기를 연출하는 알레프의 차분하고 깊은 감성의 싱글 컬렉션.'
+            },
+            {
+                id: 'lp-8',
+                artist: 'ALEPH',
+                title: '순응 (Adaptation)',
+                genre: 'Ballad',
+                year: 2021,
+                price: 41000,
+                colorGradient: 'from-cyan-950 via-zinc-900 to-zinc-950',
+                description: '삶과 관계에 대한 성찰을 아름다운 발라드 선율 위에 얹어낸 깊은 울림의 LP.'
+            },
+            {
+                id: 'lp-9',
+                artist: 'Damons year',
+                title: 'HEADACHE.',
+                genre: 'Indie Folk',
+                year: 2021,
+                price: 46000,
+                colorGradient: 'from-purple-950 via-zinc-900 to-neutral-950',
+                description: '데이먼스 이어 특유의 독보적인 음색과 우울 속에서 빛나는 위로를 전하는 명작 EP.'
+            },
+            {
+                id: 'lp-10',
+                artist: 'Damons year',
+                title: 'Mondegreen',
+                genre: 'Indie Pop',
+                year: 2023,
+                price: 50000,
+                colorGradient: 'from-amber-950 via-zinc-900 to-neutral-900',
+                description: '세련된 인디팝 사운드와 다채로운 악기 구성이 한데 어우러진 데이먼스 이어의 2023년 정규 음반.'
+            }
+        ];
+
+        // Global State Management
+        let lpList = [];
+        let currentView = 'crate'; // 'crate' or 'grid'
+
+        // DOM Elements
+        const totalCountChip = document.getElementById('total-count-chip');
+        const totalPriceChip = document.getElementById('total-price-chip');
+        const searchInput = document.getElementById('search-input');
+        const genreSelect = document.getElementById('genre-select');
+        const sortSelect = document.getElementById('sort-select');
+        
+        const viewCrateBtn = document.getElementById('view-crate-btn');
+        const viewGridBtn = document.getElementById('view-grid-btn');
+        const crateViewContainer = document.getElementById('crate-view-container');
+        const gridViewContainer = document.getElementById('grid-view-container');
+        const crateStack = document.getElementById('crate-stack');
+        const emptyState = document.getElementById('empty-state');
+
+        const detailModal = document.getElementById('detail-modal');
+        const detailModalBody = document.getElementById('detail-modal-body');
+        const closeDetailModalBtn = document.getElementById('close-detail-modal');
+
+        const addModal = document.getElementById('add-modal');
+        const openAddModalBtn = document.getElementById('open-add-modal-btn');
+        const closeAddModalBtn = document.getElementById('close-add-modal');
+        const cancelAddBtn = document.getElementById('cancel-add-btn');
+        const addLpForm = document.getElementById('add-lp-form');
+        const resetDataBtn = document.getElementById('reset-data-btn');
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            setupEventListeners();
+            render();
+            // Re-initialize lucide icons after load
+            if (window.lucide) lucide.createIcons();
+        });
+
+        // Load Data from LocalStorage or default
+        function loadData() {
+            const saved = localStorage.getItem('lp_collection_data_v1');
+            if (saved) {
+                try {
+                    lpList = JSON.parse(saved);
+                } catch(e) {
+                    lpList = [...DEFAULT_LP_DATA];
+                }
+            } else {
+                lpList = [...DEFAULT_LP_DATA];
+                saveData();
+            }
+        }
+
+        // Save Data to LocalStorage
+        function saveData() {
+            localStorage.setItem('lp_collection_data_v1', JSON.stringify(lpList));
+        }
+
+        // Event Listeners Setup
+        function setupEventListeners() {
+            // Search, Filter, Sort Inputs
+            searchInput.addEventListener('input', render);
+            genreSelect.addEventListener('change', render);
+            sortSelect.addEventListener('change', render);
+
+            // View Switcher
+            viewCrateBtn.addEventListener('click', () => setView('crate'));
+            viewGridBtn.addEventListener('click', () => setView('grid'));
+
+            // Detail Modal Close
+            closeDetailModalBtn.addEventListener('click', closeDetailModal);
+            detailModal.addEventListener('click', (e) => {
+                if (e.target === detailModal) closeDetailModal();
+            });
+
+            // Add Modal
+            openAddModalBtn.addEventListener('click', openAddModal);
+            closeAddModalBtn.addEventListener('click', closeAddModal);
+            cancelAddBtn.addEventListener('click', closeAddModal);
+            addModal.addEventListener('click', (e) => {
+                if (e.target === addModal) closeAddModal();
+            });
+
+            // Add Form Submit
+            addLpForm.addEventListener('submit', handleAddLp);
+
+            // Reset Data
+            resetDataBtn.addEventListener('click', () => {
+                if (confirm('모든 데이터를 초기 10개 샘플 데이터 상태로 되돌리시겠습니까?')) {
+                    lpList = [...DEFAULT_LP_DATA];
+                    saveData();
+                    render();
+                }
+            });
+        }
+
+        // View Mode Switcher
+        function setView(mode) {
+            currentView = mode;
+            if (mode === 'crate') {
+                viewCrateBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-amber-500 text-zinc-950 shadow-sm";
+                viewGridBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all";
+                crateViewContainer.classList.remove('hidden');
+                gridViewContainer.classList.add('hidden');
+            } else {
+                viewGridBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-amber-500 text-zinc-950 shadow-sm";
+                viewCrateBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-white transition-all";
+                gridViewContainer.classList.remove('hidden');
+                crateViewContainer.classList.add('hidden');
+            }
+            render();
+        }
+
+        // Filter and Sort Processing
+        function getFilteredAndSortedData() {
+            const query = searchInput.value.trim().toLowerCase();
+            const genre = genreSelect.value;
+            const sort = sortSelect.value;
+
+            return lpList.filter(item => {
+                const matchesQuery = item.title.toLowerCase().includes(query) || item.artist.toLowerCase().includes(query);
+                const matchesGenre = (genre === 'ALL') || (item.genre === genre);
+                return matchesQuery && matchesGenre;
+            }).sort((a, b) => {
+                if (sort === 'year-desc') return b.year - a.year;
+                if (sort === 'year-asc') return a.year - b.year;
+                if (sort === 'price-desc') return b.price - a.price;
+                if (sort === 'price-asc') return a.price - b.price;
+                if (sort === 'title-asc') return a.title.localeCompare(b.title, 'ko');
+                return 0;
+            });
+        }
+
+        // Main Render Function
+        function render() {
+            const filteredData = getFilteredAndSortedData();
+
+            // Update Total Chips (Summary Stats)
+            updateSummaryStats();
+
+            if (filteredData.length === 0) {
+                crateViewContainer.classList.add('hidden');
+                gridViewContainer.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                if (currentView === 'crate') {
+                    crateViewContainer.classList.remove('hidden');
+                } else {
+                    gridViewContainer.classList.remove('hidden');
+                }
+            }
+
+            // Render Views
+            renderCrateView(filteredData);
+            renderGridView(filteredData);
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // Summary Stats Calculation & Display
+        function updateSummaryStats() {
+            const totalCount = lpList.length;
+            const totalPrice = lpList.reduce((acc, item) => acc + Number(item.price), 0);
+
+            totalCountChip.textContent = totalCount;
+            totalPriceChip.textContent = `₩${totalPrice.toLocaleString('ko-KR')}`;
+        }
+
+        // Render 3D Record Crate View
+        function renderCrateView(data) {
+            crateStack.innerHTML = '';
+
+            const total = data.length;
+            
+            data.forEach((item, index) => {
+                // Calculate overlapping 3D stack transforms
+                // Items overlap horizontally and recede in 3D depth
+                const offsetStep = Math.min(32, 600 / Math.max(total, 1));
+                const translateX = (index - (total - 1) / 2) * offsetStep;
+                const translateZ = -Math.abs(index - (total - 1) / 2) * 15;
+                const rotateY = (index - (total - 1) / 2) * -3;
+
+                const crateCard = document.createElement('div');
+                crateCard.className = 'crate-item absolute bottom-0 w-48 sm:w-56 aspect-square rounded-2xl p-4 shadow-2xl flex flex-col justify-between border border-white/10 select-none bg-gradient-to-br ' + (item.colorGradient || 'from-zinc-800 to-zinc-950');
+                
+                crateCard.style.transform = `translateX(${translateX}px) translateZ(${translateZ}px) rotateY(${rotateY}deg)`;
+                crateCard.style.zIndex = index + 1;
+
+                crateCard.innerHTML = `
+                    <!-- Vinyl Record Disk Sliding Visual -->
+                    <div class="vinyl-disc absolute -top-8 left-1/2 -translate-x-1/2 w-40 sm:w-48 h-40 sm:h-48 rounded-full bg-zinc-950 border-4 border-zinc-800 flex items-center justify-center shadow-xl -z-10 pointer-events-none">
+                        <div class="w-14 h-14 rounded-full bg-amber-500/80 border-2 border-zinc-900 flex items-center justify-center">
+                            <div class="w-3 h-3 rounded-full bg-zinc-950"></div>
+                        </div>
+                    </div>
+
+                    <!-- Album Sleeve Cover Content -->
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] font-mono tracking-wider px-2 py-0.5 rounded-full bg-black/40 text-zinc-300 backdrop-blur-sm border border-white/5">
+                            ${item.genre}
+                        </span>
+                        <span class="text-[11px] font-bold text-amber-400/90 font-mono">
+                            ${item.year}
+                        </span>
+                    </div>
+
+                    <div class="mt-auto">
+                        <p class="text-xs font-medium text-zinc-400 truncate">${item.artist}</p>
+                        <h3 class="text-sm sm:text-base font-bold text-white leading-tight truncate mt-0.5">${item.title}</h3>
+                        <p class="text-xs font-semibold text-amber-500 mt-2">₩${Number(item.price).toLocaleString('ko-KR')}</p>
+                    </div>
+                `;
+
+                crateCard.addEventListener('click', () => openDetailModal(item));
+                crateStack.appendChild(crateCard);
+            });
+        }
+
+        // Render Modern Grid View
+        function renderGridView(data) {
+            gridViewContainer.innerHTML = '';
+
+            data.forEach(item => {
+                const gridCard = document.createElement('div');
+                gridCard.className = 'grid-card group relative bg-zinc-900/60 hover:bg-zinc-900 border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-4 transition-all duration-300 cursor-pointer flex flex-col justify-between hover:shadow-xl hover:-translate-y-1';
+
+                gridCard.innerHTML = `
+                    <!-- Album Jacket Box -->
+                    <div class="relative w-full aspect-square rounded-xl overflow-hidden bg-gradient-to-br ${item.colorGradient || 'from-zinc-800 to-zinc-950'} p-4 flex flex-col justify-between border border-white/5 mb-3">
+                        
+                        <!-- Sliding Vinyl Background -->
+                        <div class="vinyl-disc absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 rounded-full bg-zinc-950 border-4 border-zinc-800 flex items-center justify-center shadow-2xl -z-0 opacity-80 group-hover:opacity-100">
+                            <div class="w-10 h-10 rounded-full bg-amber-500 border-2 border-zinc-950 flex items-center justify-center">
+                                <div class="w-2.5 h-2.5 rounded-full bg-zinc-950"></div>
+                            </div>
+                        </div>
+
+                        <!-- Card Header -->
+                        <div class="relative z-10 flex justify-between items-center">
+                            <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-black/50 text-zinc-300 border border-white/5 backdrop-blur-sm">
+                                ${item.genre}
+                            </span>
+                            <span class="text-xs font-bold text-amber-400 font-mono">${item.year}</span>
+                        </div>
+
+                        <!-- Card Monogram Label -->
+                        <div class="relative z-10 text-center py-6">
+                            <span class="text-2xl font-black text-white/20 tracking-tighter uppercase font-mono">${item.artist.slice(0, 3)}</span>
+                        </div>
+                    </div>
+
+                    <!-- Meta Information -->
+                    <div>
+                        <p class="text-xs text-zinc-400 font-medium truncate">${item.artist}</p>
+                        <h3 class="text-sm font-bold text-white truncate mt-0.5 group-hover:text-amber-400 transition-colors">${item.title}</h3>
+                        <div class="mt-3 pt-2 border-t border-zinc-800/60 flex items-center justify-between">
+                            <span class="text-xs font-bold text-amber-500">₩${Number(item.price).toLocaleString('ko-KR')}</span>
+                            <span class="text-[10px] text-zinc-500 hover:text-zinc-300 flex items-center gap-1">
+                                상세 <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                gridCard.addEventListener('click', () => openDetailModal(item));
+                gridViewContainer.appendChild(gridCard);
+            });
+        }
+
+        // Open LP Detail Modal
+        function openDetailModal(item) {
+            detailModalBody.innerHTML = `
+                <!-- Vinyl Disc Preview -->
+                <div class="relative w-48 h-48 sm:w-56 sm:h-56 shrink-0 rounded-2xl bg-gradient-to-br ${item.colorGradient || 'from-zinc-800 to-zinc-950'} p-5 flex flex-col justify-between border border-white/10 shadow-2xl">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-black/50 text-zinc-300 border border-white/10">${item.genre}</span>
+                        <span class="text-xs font-bold text-amber-400">${item.year}년</span>
+                    </div>
+
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div class="w-32 h-32 rounded-full bg-zinc-950/90 border-4 border-zinc-800 flex items-center justify-center shadow-inner animate-spin-slow">
+                            <div class="w-10 h-10 rounded-full bg-amber-500 flex items-center justify-center">
+                                <div class="w-3 h-3 rounded-full bg-zinc-950"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative z-10 text-right">
+                        <span class="text-xs font-bold text-zinc-400">VINYL RECORD</span>
+                    </div>
+                </div>
+
+                <!-- LP Info Details -->
+                <div class="flex-1 flex flex-col justify-between text-left w-full">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">${item.genre}</span>
+                            <span class="text-xs text-zinc-500 font-mono">${item.year} RELEASE</span>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-bold text-white tracking-tight">${item.title}</h2>
+                        <p class="text-sm font-medium text-amber-500/90 mt-1">${item.artist}</p>
+
+                        <p class="text-xs text-zinc-400 leading-relaxed mt-4 p-3.5 rounded-xl bg-zinc-950 border border-zinc-800/80">
+                            ${item.description || '이 앨범에 대한 상세 정보가 등록되어 있지 않습니다.'}
+                        </p>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-zinc-800 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-zinc-500 block">구매 가격</span>
+                            <span class="text-lg font-bold text-amber-400">₩${Number(item.price).toLocaleString('ko-KR')}</span>
+                        </div>
+
+                        <button id="delete-lp-btn" class="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs font-semibold transition-colors flex items-center gap-1.5">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>삭제</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Attach Delete Event
+            document.getElementById('delete-lp-btn').onclick = () => {
+                if (confirm(`'${item.title}' 음반을 컬렉션에서 삭제하시겠습니까?`)) {
+                    lpList = lpList.filter(l => l.id !== item.id);
+                    saveData();
+                    closeDetailModal();
+                    render();
+                }
+            };
+
+            detailModal.classList.remove('opacity-0', 'pointer-events-none');
+            detailModal.children[0].classList.remove('scale-95');
+            detailModal.children[0].classList.add('scale-100');
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function closeDetailModal() {
+            detailModal.classList.add('opacity-0', 'pointer-events-none');
+            detailModal.children[0].classList.remove('scale-100');
+            detailModal.children[0].classList.add('scale-95');
+        }
+
+        // Add LP Modal Controls
+        function openAddModal() {
+            addLpForm.reset();
+            addModal.classList.remove('opacity-0', 'pointer-events-none');
+            addModal.children[0].classList.remove('scale-95');
+            addModal.children[0].classList.add('scale-100');
+        }
+
+        function closeAddModal() {
+            addModal.classList.add('opacity-0', 'pointer-events-none');
+            addModal.children[0].classList.remove('scale-100');
+            addModal.children[0].classList.add('scale-95');
+        }
+
+        // Handle Add LP Submission
+        function handleAddLp(e) {
+            e.preventDefault();
+
+            const preset = document.getElementById('add-cover-preset').value;
+            let gradient = 'from-amber-950 via-zinc-900 to-neutral-900';
+            if (preset === 'preset-1') gradient = 'from-zinc-900 via-stone-900 to-zinc-950';
+            if (preset === 'preset-3') gradient = 'from-emerald-950 via-zinc-900 to-teal-950';
+            if (preset === 'preset-4') gradient = 'from-slate-900 via-zinc-900 to-zinc-800';
+
+            const newLp = {
+                id: 'lp-' + Date.now(),
+                title: document.getElementById('add-title').value.trim(),
+                artist: document.getElementById('add-artist').value.trim(),
+                genre: document.getElementById('add-genre').value,
+                year: Number(document.getElementById('add-year').value),
+                price: Number(document.getElementById('add-price').value),
+                colorGradient: gradient,
+                description: '수집가에 의해 새로 추가된 LP 레코드입니다.'
+            };
+
+            lpList.unshift(newLp);
+            saveData();
+            closeAddModal();
+            render();
+        }
+    </script>
+</body>
+</html>
