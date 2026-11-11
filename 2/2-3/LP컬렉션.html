@@ -88,11 +88,11 @@ h1 em{font-style:normal;color:var(--accent)}
 .rec.end .tag{left:auto;right:0;text-align:right}
 .tag b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.25}
 .tag span{font-size:12.5px;color:var(--muted)}
-.rec:hover,.rec:focus-visible{z-index:200 !important;outline:none;transform:perspective(900px) translateY(calc(var(--s) * -0.36)) rotateY(0deg) scale(var(--hs))}
-.rec:hover .sleeve,.rec:focus-visible .sleeve{box-shadow:0 22px 40px rgba(0,0,0,.28)}
-.rec:hover .disc,.rec:focus-visible .disc{transform:translateX(46%) rotate(40deg)}
-.rec.end:hover .disc,.rec.end:focus-visible .disc{transform:translateX(-46%) rotate(-40deg)}
-.rec:hover .tag,.rec:focus-visible .tag{opacity:1;transform:none}
+.rec:hover,.rec:focus-visible,.rec.cur{z-index:200 !important;outline:none;transform:perspective(900px) translateY(calc(var(--s) * -0.36)) rotateY(0deg) scale(var(--hs))}
+.rec:hover .sleeve,.rec:focus-visible .sleeve,.rec.cur .sleeve{box-shadow:0 22px 40px rgba(0,0,0,.28)}
+.rec:hover .disc,.rec:focus-visible .disc,.rec.cur .disc{transform:translateX(46%) rotate(40deg)}
+.rec.end:hover .disc,.rec.end:focus-visible .disc,.rec.end.cur .disc{transform:translateX(-46%) rotate(-40deg)}
+.rec:hover .tag,.rec:focus-visible .tag,.rec.cur .tag{opacity:1;transform:none}
 .crate-front{position:absolute;left:0;right:0;bottom:0;height:calc(var(--s) * 0.3 + 46px);z-index:150;pointer-events:none;
   background:linear-gradient(180deg,var(--wood1),var(--wood2));border-top:1px solid rgba(255,255,255,.55);
   box-shadow:0 -10px 24px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:space-between;padding:0 24px;
@@ -100,6 +100,11 @@ h1 em{font-style:normal;color:var(--accent)}
 @container (max-width:600px){ .rack{--hs:1.6;padding-top:calc(var(--s) * 0.5 + 125px)} .tag b{font-size:10px} .tag span{font-size:8.5px} .crate-front{font-size:9px;letter-spacing:.18em} }
 .now{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 4px 0;font-size:13px;color:var(--muted);min-height:36px}
 .now b{color:var(--fg);font-weight:600}
+.now{align-items:center}
+.nav{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.nav button{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:12.5px;color:var(--fg)}
+.nav button:hover{border-color:var(--fg)}
+.nav .pos{min-width:56px;text-align:center;font-variant-numeric:tabular-nums}
 
 /* Grid view */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:34px 24px}
@@ -352,7 +357,10 @@ function renderStage(animate){
       crates += '<div class="crate"><div class="rack">'+recs+'<div class="crate-front"><span>MY RECORD CRATE '+no+'</span><span>'+(r+1)+'–'+(r+chunk.length)+'</span></div></div></div>';
     }
     stage.innerHTML = '<div class="crates">'+crates+'</div>' +
-      '<div class="now" id="now"><span>LP 위에 마우스를 올려 꺼내 보고, 클릭하면 상세 정보를 볼 수 있어요.</span><span>'+list.length+'장 · 상자 '+Math.ceil(list.length/ROW)+'개</span></div>';
+      '<div class="now"><span id="now">LP 위에 마우스를 올리거나 ‹ 이전 · 다음 › 버튼(키보드 ← →)으로 한 장씩 꺼내 보고, 클릭하면 상세 정보를 볼 수 있어요.</span>' +
+      '<span class="nav"><button type="button" data-nav="-1" aria-label="이전 LP">‹ 이전</button><span class="pos" id="pos">– / '+list.length+'</span>' +
+      '<button type="button" data-nav="1" aria-label="다음 LP">다음 ›</button></span></div>';
+    cur = -1;
   } else {
     stage.innerHTML = '<div class="grid">' + list.map(function(lp, i){
       return '<button class="card" data-id="'+lp.id+'" style="--i:'+i+'">' +
@@ -514,13 +522,43 @@ document.querySelector('.seg').addEventListener('click', function(e){
   renderSorts(); renderStage(true);
 });
 $('addBtn').addEventListener('click', function(){ openForm(null); });
+/* 이전/다음 LP 이동: 현재 꺼낸 LP(cur)를 기준으로 한 장씩 이동 (상자가 여러 개여도 순서대로 이어짐) */
+var cur = -1;
+function recEls(){ return Array.prototype.slice.call(document.querySelectorAll('#stage .rec')); }
+function setCur(i, focus){
+  var r = recEls(); if(!r.length) return;
+  i = (i + r.length) % r.length; cur = i;
+  r.forEach(function(x, k){ x.classList.toggle('cur', k === i); });
+  var el = r[i], lp = lps.filter(function(x){ return String(x.id) === el.dataset.id; })[0];
+  if(lp && $('now')) $('now').innerHTML = '<b>'+esc(lp.artist)+'</b> — '+esc(fullTitle(lp))+' · '+esc(lp.genre)+' · '+esc(lp.year)+'년 · <b>'+won(lp.price)+'</b>';
+  if($('pos')) $('pos').textContent = (i + 1) + ' / ' + r.length;
+  if(focus){ el.focus({preventScroll:true}); el.closest('.crate').scrollIntoView({block:'nearest', behavior:'smooth'}); }
+}
 $('stage').addEventListener('click', function(e){
+  var n = e.target.closest('[data-nav]');
+  if(n){ var d = +n.dataset.nav; setCur(cur < 0 ? (d > 0 ? 0 : -1) : cur + d, true); return; }
   var t = e.target.closest('[data-id]'); if(t) openDetail(t.dataset.id);
 });
 $('stage').addEventListener('mouseover', function(e){
-  var r = e.target.closest('.rec'), now = $('now'); if(!r || !now) return;
-  var lp = lps.filter(function(x){ return String(x.id) === r.dataset.id; })[0]; if(!lp) return;
-  now.innerHTML = '<span><b>'+esc(lp.artist)+'</b> — '+esc(fullTitle(lp))+'</span><span>'+esc(lp.genre)+' · '+esc(lp.year)+'년 · <b>'+won(lp.price)+'</b></span>';
+  var r = e.target.closest('.rec'); if(!r) return;
+  var i = recEls().indexOf(r); if(i !== cur) setCur(i, false);
+});
+/* 마우스로 꺼낸 LP는 마우스가 벗어나면 내려감 (이전/다음 위치는 기억) */
+$('stage').addEventListener('mouseout', function(e){
+  var r = e.target.closest('.rec'); if(!r || r.contains(e.relatedTarget)) return;
+  if(document.activeElement !== r) r.classList.remove('cur');
+});
+$('stage').addEventListener('keydown', function(e){
+  if(!e.target.closest('.rec, [data-nav]')) return;
+  var k = e.key, i = cur < 0 ? -1 : cur, n = recEls().length;
+  if(k === 'ArrowRight' || k === 'ArrowDown'){ setCur(i < 0 ? 0 : i + 1, true); e.preventDefault(); }
+  else if(k === 'ArrowLeft' || k === 'ArrowUp'){ setCur(i < 0 ? n - 1 : i - 1, true); e.preventDefault(); }
+  else if(k === 'Home'){ setCur(0, true); e.preventDefault(); }
+  else if(k === 'End'){ setCur(n - 1, true); e.preventDefault(); }
+});
+$('stage').addEventListener('focusin', function(e){
+  var r = e.target.closest('.rec'); if(!r) return;
+  var i = recEls().indexOf(r); if(i !== cur) setCur(i, false);
 });
 $('modal').addEventListener('click', function(e){
   if(e.target === $('modal')) return closeModal();
